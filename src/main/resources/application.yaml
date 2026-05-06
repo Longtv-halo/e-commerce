@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: study
+  datasource:
+    url: jdbc:postgresql://192.168.102.10:5432/ecommerce
+    username: longtv1
+    password: postgresql
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
