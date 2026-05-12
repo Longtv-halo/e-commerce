@@ -1,0 +1,321 @@
+{
+  "info": {
+    "name": "E-Commerce CRUD API (Department + Employee)",
+    "_postman_id": "7b08dbcb-a76d-4baf-b94f-2a98e90f5d6f",
+    "description": "Test full CRUD flows for Department and Employee, including soft delete and validation/not-found cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "departmentId1", "value": "" },
+    { "key": "departmentId2", "value": "" },
+    { "key": "employeeId1", "value": "" },
+    { "key": "employeeId2", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 - Setup Data",
+      "item": [
+        {
+          "name": "Create Department 1 (IT)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/department/create",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"IT\"\n}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.response.to.have.status(201);",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('departmentId1', json.results.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Department 2 (HR)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/department/create",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"HR\"\n}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.response.to.have.status(201);",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('departmentId2', json.results.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Employee 1 (belongs to Department 1)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"John Doe\",\n  \"empEmail\": \"john.doe@example.com\",\n  \"departmentId\": {{departmentId1}}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.response.to.have.status(201);",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('employeeId1', json.results.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Department CRUD",
+      "item": [
+        {
+          "name": "Department - List",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/department/list",
+            "body": { "mode": "raw", "raw": "{\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"id\",\n  \"sortDir\": \"asc\"\n}" }
+          }
+        },
+        {
+          "name": "Department - Search by Name",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/department/search",
+            "body": { "mode": "raw", "raw": "{\n  \"departmentName\": \"IT\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"name\",\n  \"sortDir\": \"asc\"\n}" }
+          }
+        },
+        {
+          "name": "Department - Get By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/department/{{departmentId1}}"
+          }
+        },
+        {
+          "name": "Department - Update",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/department/{{departmentId2}}",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"HR-Updated\"\n}" }
+          }
+        },
+        {
+          "name": "Department - Delete Fail (Has Active Employee)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/department/{{departmentId1}}"
+          }
+        },
+        {
+          "name": "Department - Delete Success (No Employee)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/department/{{departmentId2}}"
+          }
+        },
+        {
+          "name": "Department - Get Deleted Department (Expect 404)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/department/{{departmentId2}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Employee CRUD",
+      "item": [
+        {
+          "name": "Employee - Create 2nd Employee",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"Jane Smith\",\n  \"empEmail\": \"jane.smith@example.com\",\n  \"departmentId\": {{departmentId1}}\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.response.to.have.status(201);",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('employeeId2', json.results.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Employee - List",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/employee/list",
+            "body": { "mode": "raw", "raw": "{\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"id\",\n  \"sortDir\": \"asc\"\n}" }
+          }
+        },
+        {
+          "name": "Employee - Search by Name",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/employee/search",
+            "body": { "mode": "raw", "raw": "{\n  \"empName\": \"John\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"name\",\n  \"sortDir\": \"asc\"\n}" }
+          }
+        },
+        {
+          "name": "Employee - Get By Id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/employee/{{employeeId1}}"
+          }
+        },
+        {
+          "name": "Employee - Update",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/employee/{{employeeId1}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"John Updated\",\n  \"empEmail\": \"john.updated@example.com\",\n  \"departmentId\": {{departmentId1}}\n}"
+            }
+          }
+        },
+        {
+          "name": "Employee - Delete (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/employee/{{employeeId1}}"
+          }
+        },
+        {
+          "name": "Employee - Get Deleted Employee (Expect 404)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/employee/{{employeeId1}}"
+          }
+        },
+        {
+          "name": "Employee - Delete 2nd Employee (Cleanup)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/employee/{{employeeId2}}"
+          }
+        },
+        {
+          "name": "Department - Delete Success After Employee Cleanup",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/department/{{departmentId1}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Validation & Not Found Cases",
+      "item": [
+        {
+          "name": "Employee - Validation: Missing Name",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"\",\n  \"empEmail\": \"john@example.com\",\n  \"departmentId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Employee - Validation: Invalid Email",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"John\",\n  \"empEmail\": \"not-an-email\",\n  \"departmentId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Employee - Validation: Missing DepartmentId",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": { "mode": "raw", "raw": "{\n  \"empName\": \"John\",\n  \"empEmail\": \"john@example.com\"\n}" }
+          }
+        },
+        {
+          "name": "Department - Validation: Missing Name",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/department/create",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"\"\n}" }
+          }
+        },
+        {
+          "name": "Employee - Not Found Update",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/employee/999999",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"Ghost\",\n  \"empEmail\": \"ghost@example.com\",\n  \"departmentId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Department - Not Found Delete",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/department/999999"
+          }
+        },
+        {
+          "name": "Pagination - Invalid Size",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/employee/list",
+            "body": { "mode": "raw", "raw": "{\n  \"page\": 0,\n  \"size\": 200,\n  \"sortBy\": \"id\",\n  \"sortDir\": \"asc\"\n}" }
+          }
+        }
+      ]
+    }
+  ]
+}
