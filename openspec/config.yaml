@@ -1,0 +1,54 @@
+schema: spec-driven
+
+# Project context
+# Đây là context cho AI khi làm việc với project này.
+context: |
+  ## Tech Stack
+  - Java 17 + Spring Boot 3.x
+  - Spring Data JPA + Spring Security (JWT)
+  - H2 (dev) / MySQL (prod)
+  - Lombok, Jakarta Validation
+  - Maven
+
+  ## Domain
+  Hệ thống quản lý nhân viên và phòng ban nội bộ (e-commerce backend).
+
+  ## Package structure
+  - controller/  → REST endpoints
+  - service/     → Business logic
+  - repository/  → Spring Data JPA
+  - entity/      → JPA entities (Employees, Departments, Users, Role)
+  - dto/         → Request/Response beans
+  - security/    → JWT filter, SecurityConfig
+  - advice/      → GlobalExceptionHandler
+  - validator/   → Custom validators (@DepartmentExists)
+
+  ## API conventions
+  - Base URL: http://localhost:8080
+  - Tất cả response dùng BaseResponse<T> { success, results, resultInfo, error }
+  - List/Search endpoint dùng POST với body BaseRequest (page, size, sortBy, sortDir)
+  - Pagination: page bắt đầu từ 0
+  - Auth: JWT Bearer token, lấy từ POST /api/auth/login
+  - Endpoints cần auth: /api/employee/**, /api/department/**, /api/user/**
+  - Public endpoints: /api/auth/register, /api/auth/login
+
+  ## OpenAPI Spec
+  - File spec chính: openspec/specs/api.yaml (OpenAPI 3.0.3)
+  - Khi thêm/sửa endpoint → cập nhật cả code Java VÀ api.yaml
+
+  ## Coding conventions
+  - Dùng Lombok @Data, @Builder, @RequiredArgsConstructor
+  - Validation bằng Jakarta @NotBlank, @Email, @NotNull, @Min, @Max
+  - Custom validator: @DepartmentExists kiểm tra departmentId tồn tại trong DB
+  - Exception: ResourceNotFoundException (404), BadRequestException (400)
+  - Response helper: BaseResponse.ok(), BaseResponse.created(), BaseResponse.fail()
+
+# Per-artifact rules
+rules:
+  proposal:
+    - Luôn cập nhật openspec/specs/api.yaml khi thêm/sửa endpoint
+    - Mô tả rõ request/response schema
+    - Ghi rõ các validation rule
+  tasks:
+    - Chia task theo thứ tự: DTO → Entity → Repository → Service → Controller → Spec
+    - Mỗi bước không quá 1 file thay đổi

@@ -31,4 +31,8 @@ public class Departments {
     @OneToMany(mappedBy = "department")
     @JsonManagedReference
     private List<Employees> employees;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "leader_id", referencedColumnName = "id", unique = true)
+    private Employees leader;
 }

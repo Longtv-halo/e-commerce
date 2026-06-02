@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,34 +19,39 @@ import java.util.List;
 @RequestMapping("/api/employee")
 @RequiredArgsConstructor
 public class EmployeeController {
+
     private final EmployeeService employeeService;
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
     public ResponseEntity<BaseResponse<ResponseEmployeeBean>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
 
     @PostMapping("/search")
+    @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
     public ResponseEntity<BaseResponse<List<ResponseEmployeeBean>>> search(
             @Valid @RequestBody SearchEmployeeRequest request) {
-        return ResponseEntity.ok(
-                employeeService.getEmployeesByNamePaging(request)
-        );
+        return ResponseEntity.ok(employeeService.getEmployeesByNamePaging(request));
     }
 
     @PostMapping("/list")
+    @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
     public ResponseEntity<BaseResponse<List<ResponseEmployeeBean>>> getAll(
             @Valid @RequestBody BaseRequest request) {
         return ResponseEntity.ok(employeeService.getAllEmployees(request));
     }
 
     @PostMapping("/create")
+    @PreAuthorize("hasAuthority('EMPLOYEE_WRITE')")
     public ResponseEntity<BaseResponse<ResponseEmployeeBean>> create(
             @Valid @RequestBody RequestEmployeeBean request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.createEmployees(request));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(employeeService.createEmployees(request, false));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('EMPLOYEE_WRITE')")
     public ResponseEntity<BaseResponse<ResponseEmployeeBean>> update(
             @PathVariable Long id,
             @Valid @RequestBody RequestEmployeeBean request) {
@@ -53,6 +59,7 @@ public class EmployeeController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('EMPLOYEE_DELETE')")
     public ResponseEntity<BaseResponse<Void>> delete(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.deleteEmployees(id));
     }

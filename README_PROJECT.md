@@ -208,6 +208,7 @@ curl -X DELETE http://localhost:8080/api/employee/1
 }
 ```
 
+
 ---
 
 ## 📝 Important Notes
@@ -254,6 +255,7 @@ spring:
 - [REST API Best Practices](https://restfulapi.net/)
 
 ---
+#Xoá những đoạn comment đi phong cách code của tôi không commend
 
 **Last Updated:** May 7, 2024  
 **Version:** 1.0.0

@@ -28,6 +28,10 @@ public class Employees {
     @Column(nullable = false)
     private Boolean deleted = false;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean isOwner = false;
+
     @ManyToOne
     @JoinColumn(name = "department_id")
     @JsonBackReference

@@ -51,7 +51,7 @@ class DepartmentServiceTest {
 
         when(departmentsRepository.existsByNameIgnoreCaseAndDeletedFalse("IT")).thenReturn(false);
         when(departmentsRepository.save(any(Departments.class))).thenReturn(saved);
-        when(employeesRepository.countByDepartment_IdAndDeletedFalse(1L)).thenReturn(0L);
+        when(employeesRepository.countByDepartmentIdAndDeletedFalse(1L)).thenReturn(0L);
 
         BaseResponse<ResponseDepartmentBean> response = departmentService.createDepartment(request);
 
@@ -80,7 +80,7 @@ class DepartmentServiceTest {
                 .build();
 
         when(departmentsRepository.findByIdAndDeletedFalse(2L)).thenReturn(Optional.of(department));
-        when(employeesRepository.countByDepartment_IdAndDeletedFalse(2L)).thenReturn(3L);
+        when(employeesRepository.countByDepartmentIdAndDeletedFalse(2L)).thenReturn(3L);
 
         BaseResponse<ResponseDepartmentBean> response = departmentService.getDepartmentById(2L);
 
@@ -101,7 +101,7 @@ class DepartmentServiceTest {
 
         when(departmentsRepository.findByIdAndDeletedFalse(3L)).thenReturn(Optional.of(department));
         when(departmentsRepository.save(any(Departments.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(employeesRepository.countByDepartment_IdAndDeletedFalse(3L)).thenReturn(1L);
+        when(employeesRepository.countByDepartmentIdAndDeletedFalse(3L)).thenReturn(1L);
 
         BaseResponse<ResponseDepartmentBean> response = departmentService.updateDepartment(3L, request);
 
@@ -118,7 +118,7 @@ class DepartmentServiceTest {
                 .build();
 
         when(departmentsRepository.findByIdAndDeletedFalse(4L)).thenReturn(Optional.of(department));
-        when(employeesRepository.countByDepartment_IdAndDeletedFalse(4L)).thenReturn(2L);
+        when(employeesRepository.countByDepartmentIdAndDeletedFalse(4L)).thenReturn(2L);
 
         assertThrows(ResourceNotFoundException.class, () -> departmentService.deleteDepartment(4L));
     }

@@ -63,7 +63,7 @@ class EmployeeServiceTest {
         when(departmentsRepository.findByIdAndDeletedFalse(10L)).thenReturn(Optional.of(department));
         when(employeesRepository.save(any(Employees.class))).thenReturn(savedEmployee);
 
-        BaseResponse<ResponseEmployeeBean> response = employeeService.createEmployees(request);
+        BaseResponse<ResponseEmployeeBean> response = employeeService.createEmployees(request, false);
 
         assertTrue(response.isSuccess());
         assertNotNull(response.getResults());
@@ -84,7 +84,7 @@ class EmployeeServiceTest {
 
         when(employeesRepository.existsByEmailIgnoreCaseAndDeletedFalse("long@example.com")).thenReturn(true);
 
-        assertThrows(BadRequestException.class, () -> employeeService.createEmployees(request));
+        assertThrows(BadRequestException.class, () -> employeeService.createEmployees(request, false));
     }
 
     @Test
@@ -160,7 +160,7 @@ class EmployeeServiceTest {
         when(employeesRepository.existsByEmailIgnoreCaseAndDeletedFalse("long@example.com")).thenReturn(false);
         when(departmentsRepository.findByIdAndDeletedFalse(999L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> employeeService.createEmployees(request));
+        assertThrows(ResourceNotFoundException.class, () -> employeeService.createEmployees(request, false));
     }
 
     @Test

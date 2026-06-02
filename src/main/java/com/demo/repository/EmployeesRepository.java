@@ -27,5 +27,7 @@ public interface EmployeesRepository extends JpaRepository<Employees, Long> {
   long countByDepartmentIdAndDeletedFalse(Long departmentId);
 
   @Query("SELECT e.department.id AS departmentId, COUNT(e) AS employeeCount FROM Employees e WHERE e.deleted = false GROUP BY e.department.id")
-    List<DepartmentEmployeeCountProjection> countEmployeesByDepartment();
+  List<DepartmentEmployeeCountProjection> countEmployeesByDepartment();
+
+  Optional<Employees> findByEmailAndDeletedFalse(String email);
 }

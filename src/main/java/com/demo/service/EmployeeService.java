@@ -51,17 +51,23 @@ public class EmployeeService {
     }
 
     @Transactional
-    public BaseResponse<ResponseEmployeeBean> createEmployees(RequestEmployeeBean request) {
+    public BaseResponse<ResponseEmployeeBean> createEmployees(RequestEmployeeBean request,
+                                                              boolean isOwner) {
         if (employeeRepository.existsByEmailIgnoreCaseAndDeletedFalse(request.getEmpEmail())) {
             throw new BadRequestException("Employee email already exists");
         }
 
         Departments department = getDepartmentOrThrow(request.getDepartmentId());
 
+        if (department.getLeader().getId() == null) {
+            throw new BadRequestException("Please specify leader id");
+        }
+
         Employees employee = Employees.builder()
                 .name(request.getEmpName())
                 .email(request.getEmpEmail())
                 .department(department)
+                .isOwner(isOwner)
                 .build();
         Employees savedEmployee = employeeRepository.save(employee);
 

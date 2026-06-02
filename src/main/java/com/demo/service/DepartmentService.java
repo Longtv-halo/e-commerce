@@ -1,12 +1,8 @@
 package com.demo.service;
 
-import com.demo.dto.BaseRequest;
-import com.demo.dto.BaseResponse;
-import com.demo.dto.RequestDepartmentBean;
-import com.demo.dto.ResponseDepartmentBean;
-import com.demo.dto.ResultInfo;
-import com.demo.dto.SearchDepartmentRequest;
+import com.demo.dto.*;
 import com.demo.entity.Departments;
+import com.demo.entity.Employees;
 import com.demo.exception.BadRequestException;
 import com.demo.exception.ResourceNotFoundException;
 import com.demo.repository.DepartmentEmployeeCountProjection;
@@ -23,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +30,7 @@ public class DepartmentService {
 
     private final DepartmentsRepository departmentsRepository;
     private final EmployeesRepository employeesRepository;
+    private final EmployeeService employeeService;
 
     public BaseResponse<List<ResponseDepartmentBean>> getDepartmentsByNamePaging(SearchDepartmentRequest request) {
         Pageable pageable = buildPageable(request);
@@ -59,24 +57,52 @@ public class DepartmentService {
         Departments department = Departments.builder()
                 .name(request.getName())
                 .build();
+        department = departmentsRepository.save(department);
 
-        Departments savedDepartment = departmentsRepository.save(department);
-        return BaseResponse.created(toResponse(savedDepartment));
+        Employees leaderCandidate = Employees.builder()
+                .name(request.getEmpName())
+                .email(request.getEmpEmail())
+                .department(department)
+                .isOwner(Boolean.TRUE.equals(request.getIsOwner()))
+                .build();
+        leaderCandidate = employeesRepository.save(leaderCandidate);
+
+        if (Boolean.TRUE.equals(request.getIsOwner())) {
+            department.setLeader(leaderCandidate);
+            department = departmentsRepository.save(department);
+        }
+
+        return BaseResponse.created(toResponse(department));
     }
 
     @Transactional
     public BaseResponse<ResponseDepartmentBean> updateDepartment(Long id, RequestDepartmentBean request) {
         Departments department = getDepartmentOrThrow(id);
-        department.setName(request.getName());
 
-        Departments savedDepartment = departmentsRepository.save(department);
-        return BaseResponse.ok(toResponse(savedDepartment));
+        if (department == null) {
+            throw new BadRequestException("Department not found");
+        }
+
+        Optional<Employees> employee = employeesRepository.findByEmailAndDeletedFalse(request.getEmpEmail());
+
+        if (employee.isEmpty()) {
+            throw new BadRequestException("Employee with email " + request.getEmpEmail() + " not found");
+        }
+
+        if (department.getLeader().getId() == null
+                || !department.getLeader().getId().equals(employee.get().getId())
+                || !Boolean.TRUE.equals(employee.get().getIsOwner())) {
+            throw new BadRequestException("Employee is not the leader of the department");
+        }
+
+        department = departmentsRepository.save(department);
+        return BaseResponse.created(toResponse(department));
     }
 
     @Transactional
     public BaseResponse<Void> deleteDepartment(Long id) {
         Departments department = getDepartmentOrThrow(id);
-        long employeeCount = employeesRepository.countByDepartment_IdAndDeletedFalse(id);
+        long employeeCount = employeesRepository.countByDepartmentIdAndDeletedFalse(id);
         if (employeeCount > 0) {
             throw new ResourceNotFoundException("Department with id " + id + " cannot be deleted because it has " + employeeCount + " employee(s)");
         }
@@ -125,7 +151,7 @@ public class DepartmentService {
     }
 
     private ResponseDepartmentBean toResponse(Departments department) {
-        Long employeeCount = employeesRepository.countByDepartment_IdAndDeletedFalse(department.getId());
+        Long employeeCount = employeesRepository.countByDepartmentIdAndDeletedFalse(department.getId());
 
         return ResponseDepartmentBean.builder()
                 .id(department.getId())
@@ -143,6 +169,51 @@ public class DepartmentService {
                 .employeeCount(employeeCount)
                 .build();
     }
+
+    @Transactional
+    public BaseResponse<ResponseDepartmentBean> changeRoleLeader(Long id, RequestAssignRoleDepartmentBean request) {
+        Departments department = getDepartmentOrThrow(id);
+
+        if (department == null) {
+            throw new BadRequestException("Department not found");
+        }
+
+        Optional<Employees> oldOwner = employeesRepository.findByEmailAndDeletedFalse(request.getOwnerEmail());
+        Optional<Employees> newOwner = employeesRepository.findByEmailAndDeletedFalse(request.getNewOwnerEmail());
+
+        if (oldOwner.isEmpty()) {
+            throw new BadRequestException("Employee with email " + request.getOwnerEmail() + " not found");
+        }
+
+        if (newOwner.isEmpty()) {
+            throw new BadRequestException("Employee be assigned leader with email "
+                    + request.getNewOwnerEmail() + " not found");
+        }
+
+        if (department.getLeader().getId() == null
+                || !department.getLeader().getId().equals(oldOwner.get().getId())
+                || !Boolean.TRUE.equals(oldOwner.get().getIsOwner())) {
+            throw new BadRequestException("Employee is not the leader of the department");
+        }
+
+        if (Boolean.TRUE.equals(newOwner.get().getIsOwner())) {
+            throw new BadRequestException("Employee is the leader of the department and cannot be assigned as a new leader");
+        }
+
+        if (!department.getId().equals(newOwner.get().getDepartment().getId())) {
+            throw new BadRequestException("Employee is not in the department and cannot be assigned as a new leader");
+        }
+
+        oldOwner.get().setIsOwner(false);
+        newOwner.get().setIsOwner(true);
+        employeesRepository.save(oldOwner.get());
+        employeesRepository.save(newOwner.get());
+
+        department.setLeader(newOwner.get());
+        department = departmentsRepository.save(department);
+        return BaseResponse.created(toResponse(department));
+    }
+
 }
 
 
