@@ -1,0 +1,500 @@
+{
+  "info": {
+    "name": "E-Commerce API — Full Test Suite",
+    "description": "Test đầy đủ flow: Auth → Department → Employee → RBAC Management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "departmentId", "value": "" },
+    { "key": "employeeId", "value": "" }
+  ],
+  "item": [
+
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Login — Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.results && res.results.token) {",
+                  "    pm.collectionVariables.set('token', res.results.token);",
+                  "    console.log('Token saved:', res.results.token.substring(0, 30) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register — New User (Nguyen Van An)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Nguyen Van An\",\n  \"username\": \"nguyenvanan\",\n  \"password\": \"pass123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register — Manager (Tran Thi Bich)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Tran Thi Bich\",\n  \"username\": \"tranthbich\",\n  \"password\": \"pass123456\"\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "2. Department",
+      "item": [
+        {
+          "name": "Create — Engineering",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.results && res.results.id) {",
+                  "    pm.collectionVariables.set('departmentId', res.results.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/department/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Engineering\",\n  \"empEmail\": \"le.minh.tuan@company.vn\",\n  \"empName\": \"Le Minh Tuan\",\n  \"isOwner\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Create — Marketing",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/department/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Marketing\",\n  \"empEmail\": \"pham.thu.huong@company.vn\",\n  \"empName\": \"Pham Thu Huong\",\n  \"isOwner\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Create — Human Resources",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/department/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Human Resources\",\n  \"empEmail\": \"nguyen.thi.lan@company.vn\",\n  \"empName\": \"Nguyen Thi Lan\",\n  \"isOwner\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "List All Departments",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/department/list",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"id\",\n  \"sortDir\": \"asc\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Search Department — 'Eng'",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/department/search",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"departmentName\": \"Eng\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"id\",\n  \"sortDir\": \"asc\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Department By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/department/{{departmentId}}"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "3. Employee",
+      "item": [
+        {
+          "name": "Create — Nguyen Hoang Nam (Engineering)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.results && res.results.id) {",
+                  "    pm.collectionVariables.set('employeeId', res.results.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"Nguyen Hoang Nam\",\n  \"empEmail\": \"nguyen.hoang.nam@company.vn\",\n  \"departmentId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Create — Tran Duc Anh (Engineering)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"Tran Duc Anh\",\n  \"empEmail\": \"tran.duc.anh@company.vn\",\n  \"departmentId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Create — Le Thi Mai (Marketing)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"Le Thi Mai\",\n  \"empEmail\": \"le.thi.mai@company.vn\",\n  \"departmentId\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "Create — Pham Quoc Bao (Marketing)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"Pham Quoc Bao\",\n  \"empEmail\": \"pham.quoc.bao@company.vn\",\n  \"departmentId\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "Create — Vo Thi Kim Anh (HR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"Vo Thi Kim Anh\",\n  \"empEmail\": \"vo.thi.kim.anh@company.vn\",\n  \"departmentId\": 3\n}"
+            }
+          }
+        },
+        {
+          "name": "List All Employees (page 0)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/employee/list",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"id\",\n  \"sortDir\": \"asc\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Search Employee — 'Nguyen'",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/employee/search",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"Nguyen\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"empName\",\n  \"sortDir\": \"asc\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Employee By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/employee/{{employeeId}}"
+          }
+        },
+        {
+          "name": "Update Employee — Nguyen Hoang Nam",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/employee/{{employeeId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"Nguyen Hoang Nam (Senior)\",\n  \"empEmail\": \"nguyen.hoang.nam@company.vn\",\n  \"departmentId\": 1\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "4. RBAC — Role & Permission",
+      "item": [
+        {
+          "name": "List All Roles",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/role"
+          }
+        },
+        {
+          "name": "List All Permissions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/permission"
+          }
+        },
+        {
+          "name": "Create Role — ROLE_REPORTER",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/role/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ROLE_REPORTER\",\n  \"description\": \"Chi xem bao cao, khong chinh sua\",\n  \"permissionIds\": [1, 4]\n}"
+            }
+          }
+        },
+        {
+          "name": "Assign Permissions to Role (id=2 ROLE_MANAGER)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/role/2/permissions",
+            "body": {
+              "mode": "raw",
+              "raw": "[1, 2, 4, 5]"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "5. User Management",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/user/me"
+          }
+        },
+        {
+          "name": "List All Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/user?page=0&size=10&sortBy=id&sortDir=asc",
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" },
+                { "key": "sortBy", "value": "id" },
+                { "key": "sortDir", "value": "asc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Assign ROLE_MANAGER to User (id=2)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/user/2/roles",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleIds\": [2]\n}"
+            }
+          }
+        },
+        {
+          "name": "Toggle User Status — Lock (id=3)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/user/3/status"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "6. Error Cases",
+      "item": [
+        {
+          "name": "[400] Create Employee — Missing empName",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empEmail\": \"test@company.vn\",\n  \"departmentId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "[400] Create Employee — Invalid Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"Test User\",\n  \"empEmail\": \"not-an-email\",\n  \"departmentId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "[400] Create Employee — Department Not Found",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/employee/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empName\": \"Test User\",\n  \"empEmail\": \"test@company.vn\",\n  \"departmentId\": 9999\n}"
+            }
+          }
+        },
+        {
+          "name": "[404] Get Employee — Not Found",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/employee/9999"
+          }
+        },
+        {
+          "name": "[403] Access Role API — No Permission (login as nguyenvanan first)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/role"
+          }
+        },
+        {
+          "name": "[401] No Token",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/employee/1"
+          }
+        }
+      ]
+    }
+
+  ]
+}
