@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
@@ -60,5 +61,18 @@ public class UserController {
     @PreAuthorize("hasAuthority('USER_MANAGE')")
     public ResponseEntity<BaseResponse<Void>> delete(@PathVariable Long id) {
         return ResponseEntity.ok(userService.deleteUser(id));
+    }
+
+    /**
+     * Links a user to an employee record so that ABAC can resolve their department.
+     * Send {@code {"employeeId": null}} to unlink.
+     */
+    @PutMapping("/{id}/employee")
+    @PreAuthorize("hasAuthority('USER_MANAGE')")
+    public ResponseEntity<BaseResponse<ResponseUserBean>> assignEmployee(
+            @PathVariable Long id,
+            @RequestBody Map<String, Long> body) {
+        Long employeeId = body.get("employeeId");
+        return ResponseEntity.ok(userService.assignEmployee(id, employeeId));
     }
 }
