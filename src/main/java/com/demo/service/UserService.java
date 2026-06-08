@@ -3,11 +3,13 @@ package com.demo.service;
 import com.demo.dto.BaseResponse;
 import com.demo.dto.RequestAssignRolesBean;
 import com.demo.dto.ResponseUserBean;
+import com.demo.entity.Employees;
 import com.demo.entity.Permission;
 import com.demo.entity.Role;
 import com.demo.entity.Users;
 import com.demo.exception.BadRequestException;
 import com.demo.exception.ResourceNotFoundException;
+import com.demo.repository.EmployeesRepository;
 import com.demo.repository.RoleRepository;
 import com.demo.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class UserService {
 
     private final UsersRepository usersRepository;
     private final RoleRepository roleRepository;
+    private final EmployeesRepository employeesRepository;
 
     public BaseResponse<List<ResponseUserBean>> getAllUsers(int page, int size, String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
@@ -65,6 +68,30 @@ public class UserService {
     public BaseResponse<Void> deleteUser(Long userId) {
         usersRepository.delete(findById(userId));
         return BaseResponse.ok(null);
+    }
+
+    /**
+     * Links a user to an employee record.
+     * This is required for ABAC to resolve the user's department
+     * for time-based access control checks.
+     *
+     * @param userId     the user to update
+     * @param employeeId the employee to link (or null to unlink)
+     */
+    @Transactional
+    public BaseResponse<ResponseUserBean> assignEmployee(Long userId, Long employeeId) {
+        Users user = findById(userId);
+        if (employeeId == null) {
+            user.setEmployee(null);
+        } else {
+            Employees employee = employeesRepository.findById(employeeId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Employee with id " + employeeId + " not found"));
+            if (Boolean.TRUE.equals(employee.getDeleted())) {
+                throw new BadRequestException("Employee with id " + employeeId + " is deleted");
+            }
+            user.setEmployee(employee);
+        }
+        return BaseResponse.ok(toResponse(usersRepository.save(user)));
     }
 
     private Users findById(Long id) {

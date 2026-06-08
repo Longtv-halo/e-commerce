@@ -42,6 +42,16 @@ public class Users implements UserDetails {
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
 
+    /**
+     * Links this user to their employee record.
+     * Used by the ABAC policy evaluator to determine
+     * which department the user belongs to.
+     * May be null for system/admin users with no department affiliation.
+     */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_id")
+    private Employees employee;
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean enabled = true;

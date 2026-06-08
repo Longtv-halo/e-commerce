@@ -20,6 +20,9 @@ public class Employees {
     private Long id;
 
     @Column(nullable = false)
+    private String tenant_id;
+
+    @Column(nullable = false)
     private String name;
 
     private String email;

@@ -19,27 +19,27 @@ public class DepartmentController {
     private final DepartmentService departmentService;
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('DEPARTMENT_READ')")
+    @PreAuthorize("hasAuthority('DEPARTMENT_READ') and @abacEval.isAllowed(authentication, 'DEPARTMENT', #id)")
     public ResponseEntity<BaseResponse<ResponseDepartmentBean>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(departmentService.getDepartmentById(id));
     }
 
     @PostMapping("/search")
-    @PreAuthorize("hasAuthority('DEPARTMENT_READ')")
+    @PreAuthorize("hasAuthority('DEPARTMENT_READ') and @abacEval.isAllowed(authentication, 'DEPARTMENT', null)")
     public ResponseEntity<BaseResponse<List<ResponseDepartmentBean>>> search(
             @Valid @RequestBody SearchDepartmentRequest request) {
         return ResponseEntity.ok(departmentService.getDepartmentsByNamePaging(request));
     }
 
     @PostMapping("/list")
-    @PreAuthorize("hasAuthority('DEPARTMENT_READ')")
+    @PreAuthorize("hasAuthority('DEPARTMENT_READ') and @abacEval.isAllowed(authentication, 'DEPARTMENT', null)")
     public ResponseEntity<BaseResponse<List<ResponseDepartmentBean>>> getAll(
             @Valid @RequestBody BaseRequest request) {
         return ResponseEntity.ok(departmentService.getAllDepartments(request));
     }
 
     @PostMapping("/create")
-    @PreAuthorize("hasAuthority('DEPARTMENT_WRITE')")
+    @PreAuthorize("hasAuthority('DEPARTMENT_WRITE') and @abacEval.isAllowed(authentication, 'DEPARTMENT', null)")
     public ResponseEntity<BaseResponse<ResponseDepartmentBean>> create(
             @Valid @RequestBody RequestDepartmentBean request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -47,7 +47,7 @@ public class DepartmentController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('DEPARTMENT_WRITE')")
+    @PreAuthorize("hasAuthority('DEPARTMENT_WRITE') and @abacEval.isAllowed(authentication, 'DEPARTMENT', #id)")
     public ResponseEntity<BaseResponse<ResponseDepartmentBean>> update(
             @PathVariable Long id,
             @Valid @RequestBody RequestDepartmentBean request) {
@@ -55,13 +55,13 @@ public class DepartmentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('DEPARTMENT_DELETE')")
+    @PreAuthorize("hasAuthority('DEPARTMENT_DELETE') and @abacEval.isAllowed(authentication, 'DEPARTMENT', #id)")
     public ResponseEntity<BaseResponse<Void>> delete(@PathVariable Long id) {
         return ResponseEntity.ok(departmentService.deleteDepartment(id));
     }
 
     @PutMapping("/assign{id}")
-    @PreAuthorize("hasAuthority('DEPARTMENT_WRITE')")
+    @PreAuthorize("hasAuthority('DEPARTMENT_WRITE') and @abacEval.isAllowed(authentication, 'DEPARTMENT', #id)")
     public ResponseEntity<BaseResponse<ResponseDepartmentBean>> assign(
             @PathVariable Long id,
             @Valid @RequestBody RequestAssignRoleDepartmentBean request) {

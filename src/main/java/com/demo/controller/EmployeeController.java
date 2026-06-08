@@ -23,27 +23,27 @@ public class EmployeeController {
     private final EmployeeService employeeService;
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @PreAuthorize("hasAuthority('EMPLOYEE_READ') and @abacEval.isAllowed(authentication, 'EMPLOYEE', #id)")
     public ResponseEntity<BaseResponse<ResponseEmployeeBean>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
 
     @PostMapping("/search")
-    @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @PreAuthorize("hasAuthority('EMPLOYEE_READ') and @abacEval.isAllowed(authentication, 'EMPLOYEE', null)")
     public ResponseEntity<BaseResponse<List<ResponseEmployeeBean>>> search(
             @Valid @RequestBody SearchEmployeeRequest request) {
         return ResponseEntity.ok(employeeService.getEmployeesByNamePaging(request));
     }
 
     @PostMapping("/list")
-    @PreAuthorize("hasAuthority('EMPLOYEE_READ')")
+    @PreAuthorize("hasAuthority('EMPLOYEE_READ') and @abacEval.isAllowed(authentication, 'EMPLOYEE', null)")
     public ResponseEntity<BaseResponse<List<ResponseEmployeeBean>>> getAll(
             @Valid @RequestBody BaseRequest request) {
         return ResponseEntity.ok(employeeService.getAllEmployees(request));
     }
 
     @PostMapping("/create")
-    @PreAuthorize("hasAuthority('EMPLOYEE_WRITE')")
+    @PreAuthorize("hasAuthority('EMPLOYEE_WRITE') and @abacEval.isAllowed(authentication, 'EMPLOYEE', null)")
     public ResponseEntity<BaseResponse<ResponseEmployeeBean>> create(
             @Valid @RequestBody RequestEmployeeBean request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -51,7 +51,7 @@ public class EmployeeController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('EMPLOYEE_WRITE')")
+    @PreAuthorize("hasAuthority('EMPLOYEE_WRITE') and @abacEval.isAllowed(authentication, 'EMPLOYEE', #id)")
     public ResponseEntity<BaseResponse<ResponseEmployeeBean>> update(
             @PathVariable Long id,
             @Valid @RequestBody RequestEmployeeBean request) {
@@ -59,7 +59,7 @@ public class EmployeeController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('EMPLOYEE_DELETE')")
+    @PreAuthorize("hasAuthority('EMPLOYEE_DELETE') and @abacEval.isAllowed(authentication, 'EMPLOYEE', #id)")
     public ResponseEntity<BaseResponse<Void>> delete(@PathVariable Long id) {
         return ResponseEntity.ok(employeeService.deleteEmployees(id));
     }

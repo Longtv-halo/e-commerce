@@ -1,0 +1,4 @@
+-- V1: Base schema (applied automatically since tables already exist; Flyway baseline will handle this)
+-- This migration is intentionally empty to serve as baseline.
+-- Tables: users, roles, permissions, user_roles, role_permissions, employees, departments
+-- were created by hibernate ddl-auto=update on first run.
