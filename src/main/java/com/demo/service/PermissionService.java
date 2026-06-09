@@ -65,7 +65,6 @@ public class PermissionService {
                 .id(p.getId())
                 .name(p.getName())
                 .description(p.getDescription())
-                .enabled(p.getEnabled())
                 .build();
     }
 }

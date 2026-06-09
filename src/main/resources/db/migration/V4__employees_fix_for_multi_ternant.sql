@@ -1,21 +1,25 @@
--- Employees table (multi-tenant version)
-CREATE TABLE employees (
-    id            BIGSERIAL,
-    tenant_id     VARCHAR(100) NOT NULL,
-    name          VARCHAR(255) NOT NULL,
-    email         VARCHAR(255),
-    department_id BIGINT,
-    deleted       BOOLEAN DEFAULT FALSE,
-    PRIMARY KEY (id, tenant_id)
-);
+-- V4: Ensure employees table has multi-tenant support (idempotent)
+-- Table is already created in V1, this migration ensures RLS and tenant isolation
 
--- Enable RLS
+-- Add tenant_id if somehow missing
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100) NOT NULL DEFAULT 'DEFAULT_TENANT';
+
+-- Update any null tenant_id values
+UPDATE employees SET tenant_id = 'DEFAULT_TENANT' WHERE tenant_id IS NULL;
+
+-- Enable Row Level Security
 ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE employees FORCE ROW LEVEL SECURITY;
 
--- Policy: mỗi tenant chỉ thấy data của mình
-CREATE POLICY tenant_isolation ON employees
-    USING (tenant_id = current_setting('app.current_tenant', TRUE));
+-- Create tenant isolation policy (skip if already exists)
+DO $$
+BEGIN
+    CREATE POLICY tenant_isolation ON employees
+        USING (tenant_id = current_setting('app.current_tenant', TRUE));
+EXCEPTION WHEN duplicate_object THEN
+    NULL;
+END $$;
 
--- Index quan trọng cho performance
-CREATE INDEX idx_employees_tenant ON employees (tenant_id);
+-- Index for performance
+CREATE INDEX IF NOT EXISTS idx_employees_tenant ON employees (tenant_id);
+

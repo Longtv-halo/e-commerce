@@ -12,3 +12,9 @@ spring:
       hibernate:
         format_sql: false
 
+minio:
+  url: http://192.168.102.10:9000
+  access-key: admin
+  secret-key: StrongPassword123!
+  bucket-name: my-documents
+
