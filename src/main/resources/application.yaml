@@ -2,14 +2,14 @@ spring:
   application:
     name: study
   datasource:
-    url: jdbc:postgresql://localhost:5432/ecommerce
+    url: jdbc:postgresql://192.168.102.10:5432/ecommerce
     username: longtv1
-    password: 09052001
+    password: "09052001"
     driver-class-name: org.postgresql.Driver
   jpa:
     defer-datasource-initialization: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
@@ -18,8 +18,16 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    baseline-version: 0
+    baseline-description: "Initial baseline"
     locations: classpath:db/migration
-
+    out-of-order: false
+    validate-on-migrate: false
+minio:
+  url: 192.168.102.10:9000
+  access-key: admin
+  secret-key: StrongPassword123!
+  bucket-name: my-documents
 jwt:
   secret: dGhpc0lzQVN1cGVyU2VjcmV0S2V5Rm9ySldUQXV0aGVudGljYXRpb25JblNwcmluZ0Jvb3RBcHA=
   expiration: 86400000

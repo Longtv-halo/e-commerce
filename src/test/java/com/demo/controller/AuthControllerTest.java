@@ -16,6 +16,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -55,7 +57,7 @@ public class AuthControllerTest {
         AuthResponse resp = AuthResponse.builder()
                 .token("fake-token")
                 .username("johndoe")
-                .role("ROLE_USER")
+                .roles(List.of("ROLE_USER"))
                 .build();
 
         when(authService.register(any(RegisterRequest.class))).thenReturn(resp);
@@ -78,7 +80,7 @@ public class AuthControllerTest {
         AuthResponse resp = AuthResponse.builder()
                 .token("login-token")
                 .username("johndoe")
-                .role("ROLE_USER")
+                .roles(List.of("ROLE_USER"))
                 .build();
 
         when(authService.login(any(LoginRequest.class))).thenReturn(resp);

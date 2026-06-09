@@ -42,8 +42,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/employee/create",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "employee", "create"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employee",
+            "create"
+          ]
         }
       }
     },
@@ -63,8 +69,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/employee/list",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "employee", "list"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employee",
+            "list"
+          ]
         }
       }
     },
@@ -84,8 +96,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/employee/search",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "employee", "search"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employee",
+            "search"
+          ]
         }
       }
     },
@@ -105,8 +123,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/employee/{{employee_id}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "employee", "{{employee_id}}"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employee",
+            "{{employee_id}}"
+          ]
         }
       }
     },
@@ -117,8 +141,14 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/employee/{{employee_id}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "employee", "{{employee_id}}"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employee",
+            "{{employee_id}}"
+          ]
         }
       }
     },
@@ -159,8 +189,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/employee/create",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "employee", "create"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employee",
+            "create"
+          ]
         }
       }
     },
@@ -180,8 +216,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/employee/create",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "employee", "create"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employee",
+            "create"
+          ]
         }
       }
     },
@@ -201,8 +243,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/employee/list",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "employee", "list"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employee",
+            "list"
+          ]
         }
       }
     },
@@ -222,8 +270,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/employee/list",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "employee", "list"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employee",
+            "list"
+          ]
         }
       }
     },
@@ -264,8 +318,14 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/employee/9999",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "employee", "9999"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employee",
+            "9999"
+          ]
         }
       }
     },
@@ -276,8 +336,149 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/employee/9999",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "employee", "9999"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employee",
+            "9999"
+          ]
+        }
+      }
+    },
+    {
+      "name": "6. Register New User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test('Response has success=true', function () {",
+              "    pm.expect(jsonData.success).to.eql(true);",
+              "});",
+              "",
+              "if (jsonData.success && jsonData.results && jsonData.results.token) {",
+              "    pm.globals.set('token', jsonData.results.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"John Doe\",\n    \"username\": \"johndoe_new\",\n    \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ]
+        }
+      }
+    },
+    {
+      "name": "7. Login to Get Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test('Response has success=true', function () {",
+              "    pm.expect(jsonData.success).to.eql(true);",
+              "});",
+              "",
+              "if (jsonData.success && jsonData.results && jsonData.results.token) {",
+              "    pm.globals.set('token', jsonData.results.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"username\": \"johndoe\",\n    \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "7. Upload File to MinIO",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            },
+            {
+              "key": "folder",
+              "value": "documents",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/file/upload",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "file",
+            "upload"
+          ]
         }
       }
     }
@@ -292,7 +493,11 @@
       "key": "employee_id",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
     }
   ]
 }
-
