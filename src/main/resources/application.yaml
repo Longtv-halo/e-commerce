@@ -2,14 +2,14 @@ spring:
   application:
     name: study
   datasource:
-    url: jdbc:postgresql://192.168.102.10:5432/ecommerce
+    url: jdbc:postgresql://localhost:5432/ecommerce
     username: longtv1
     password: "09052001"
     driver-class-name: org.postgresql.Driver
   jpa:
     defer-datasource-initialization: true
     hibernate:
-      ddl-auto: none
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
@@ -24,7 +24,7 @@ spring:
     out-of-order: false
     validate-on-migrate: false
 minio:
-  url: 192.168.102.10:9000
+  url: localhost:9000
   access-key: admin
   secret-key: StrongPassword123!
   bucket-name: my-documents

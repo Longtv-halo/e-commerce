@@ -1,16 +1,20 @@
 package com.demo.service;
 
 import com.demo.dto.RequestUploadFileBean;
-import io.minio.BucketExistsArgs;
-import io.minio.MakeBucketArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
+import com.demo.entity.Documents;
+import com.demo.repository.DocumentRepository;
+import com.demo.security.SecurityUtils;
+import io.minio.*;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
@@ -20,6 +24,8 @@ public class MinioService {
 
     @Value("${minio.bucket-name}")
     private String bucketName;
+
+    private final DocumentRepository documentRepository;
 
     public String uploadFile(MultipartFile file) {
         return uploadFile(RequestUploadFileBean.builder().file(file).build());
@@ -46,6 +52,18 @@ public class MinioService {
                 objectName = folder + objectName;
             }
 
+            Documents document = Documents.builder()
+                    .fileName(file.getOriginalFilename())
+                    .objectName(objectName)
+                    .contentType(file.getContentType())
+                    .size(file.getSize())
+                    .uploaderId(UUID.fromString(SecurityUtils.currentUserId()))
+                    .uploaderUsername(SecurityUtils.currentUsername())
+                    .uploadedAt(LocalDateTime.now())
+                    .build();
+
+            documentRepository.save(document);
+
             try (InputStream inputStream = file.getInputStream()) {
                 minioClient.putObject(
                         PutObjectArgs.builder()
@@ -63,5 +81,22 @@ public class MinioService {
             throw new RuntimeException("Lỗi khi upload file lên MinIO: " + e.getMessage());
         }
     }
-}
 
+    public InputStream download(String objectName) throws Exception {
+        UUID userId = UUID.fromString(SecurityUtils.currentUserId());
+
+        Documents file = documentRepository.findByObjectNameAndUploaderId(objectName, userId)
+                .orElseThrow(null);
+
+        if (file == null) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        return minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(objectName)
+                        .build()
+        );
+    }
+}
