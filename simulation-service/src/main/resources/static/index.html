@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation Metrics Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(20, 28, 47, 0.45);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --primary-glow: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            --success-glow: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --error-glow: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --warning-glow: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient Glow Background Accents */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 40%;
+            height: 40%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            z-index: -1;
+            filter: blur(50px);
+            pointer-events: none;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            right: -10%;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            z-index: -1;
+            filter: blur(60px);
+            pointer-events: none;
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(11, 15, 25, 0.7);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-title-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .pulse-icon {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--info-color);
+            box-shadow: 0 0 12px var(--info-color);
+        }
+
+        .pulse-icon.active {
+            background-color: var(--warning-color);
+            box-shadow: 0 0 15px var(--warning-color);
+            animation: pulse-animation 1.5s infinite alternate;
+        }
+
+        .pulse-icon.success {
+            background-color: var(--success-color);
+            box-shadow: 0 0 12px var(--success-color);
+        }
+
+        @keyframes pulse-animation {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.3); opacity: 1; }
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            background: linear-gradient(90deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .server-badges {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .dot-green { background-color: var(--success-color); box-shadow: 0 0 6px var(--success-color); }
+        .dot-amber { background-color: var(--warning-color); box-shadow: 0 0 6px var(--warning-color); }
+        .dot-red { background-color: var(--error-color); box-shadow: 0 0 6px var(--error-color); }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1440px;
+            margin: 0 auto;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card System (Glassmorphic) */
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .glass-card:hover {
+            box-shadow: 0 8px 40px 0 rgba(59, 130, 246, 0.08);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+        }
+
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Form Controls */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        select, input {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s ease, background 0.2s ease;
+            width: 100%;
+        }
+
+        select:focus, input:focus {
+            border-color: #60a5fa;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        select option {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        .row-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* Buttons and Glow Effects */
+        .btn {
+            padding: 0.85rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .btn-primary {
+            background: var(--primary-glow);
+            color: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--error-color);
+            color: #fca5a5;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: var(--error-color);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--success-color);
+            color: #a7f3d0;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--success-glow);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.05);
+            margin: 0.5rem 0;
+        }
+
+        /* Telemetry Cards */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .telemetry-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .telemetry-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--info-color);
+        }
+
+        .telemetry-card.success::before { background: var(--success-color); }
+        .telemetry-card.danger::before { background: var(--error-color); }
+        .telemetry-card.warning::before { background: var(--warning-color); }
+
+        .telemetry-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .telemetry-val {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .telemetry-subtext {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .progress-label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .progress-bar-bg {
+            background: rgba(255, 255, 255, 0.05);
+            height: 8px;
+            border-radius: 9999px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .progress-bar-fill {
+            background: var(--primary-glow);
+            height: 100%;
+            width: 0%;
+            border-radius: 9999px;
+            transition: width 0.3s ease;
+        }
+
+        /* Charts styling */
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 12px;
+            padding: 0.5rem;
+        }
+
+        /* Console styling */
+        .console-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .console-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .console-tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .console-tab {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .console-tab.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .console-scroller {
+            background: #03050a;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            height: 200px;
+            overflow-y: auto;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            scroll-behavior: smooth;
+        }
+
+        .log-entry {
+            display: block;
+            white-space: pre-wrap;
+        }
+
+        .log-success { color: #34d399; }
+        .log-denied { color: #f59e0b; }
+        .log-error { color: #f87171; }
+        .log-system { color: #60a5fa; }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .checkbox-container input {
+            width: auto;
+            cursor: pointer;
+        }
+
+        /* Seeding Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(11, 15, 25, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top: 5px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title-container">
+            <div id="sim-status-dot" class="pulse-icon"></div>
+            <h1>SIMULATION METRICS COMMAND CENTER</h1>
+        </div>
+        <div class="server-badges">
+            <div class="badge" title="Simulation Service status">
+                <span class="badge-dot dot-green"></span>
+                <span>SIMULATOR: 8081</span>
+            </div>
+            <div class="badge" id="app-server-badge" title="Target E-Commerce API status">
+                <span id="app-server-dot" class="badge-dot dot-amber"></span>
+                <span id="app-server-text">API APP: CHECKING...</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Simulation Control Panel -->
+        <section class="glass-card">
+            <div class="card-header">
+                <h2 class="card-title">Orchestrator</h2>
+            </div>
+            
+            <div class="form-group">
+                <label for="scenario-select">Load Profile Scenario</label>
+                <select id="scenario-select">
+                    <option value="ABAC_VIOLATION">ABAC Time Policy Storm</option>
+                    <option value="DB_STRESS">DB Connection Pool Stress</option>
+                    <option value="LATENCY_FLOOD">High Latency Search Flood</option>
+                    <option value="AUTH_EXHAUSTION">Authentication CPU Stress</option>
+                    <option value="MINIO_STRESS">MinIO Storage I/O Stress</option>
+                </select>
+            </div>
+
+            <div class="row-inputs">
+                <div class="form-group">
+                    <label for="requests-input">Total Requests</label>
+                    <input type="number" id="requests-input" value="500" min="10" max="5000" step="10">
+                </div>
+                <div class="form-group">
+                    <label for="concurrency-input">Concurrency</label>
+                    <input type="number" id="concurrency-input" value="10" min="1" max="50" step="1">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="target-input">Target Service URL</label>
+                <input type="text" id="target-input" value="http://localhost:8080">
+            </div>
+
+            <div class="form-group" style="margin-top: 0.5rem; gap: 0.75rem;">
+                <button id="start-btn" class="btn btn-primary">Start Simulation</button>
+                <button id="stop-btn" class="btn btn-danger" disabled>Stop Simulation</button>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="form-group">
+                <label>Infrastructure Seeding</label>
+                <button id="seed-btn" class="btn btn-secondary" style="margin-top: 0.25rem;">
+                    Auto-Generate Seed Data
+                </button>
+                <span style="font-size: 0.7rem; color: var(--text-secondary); text-align: center; display: block;">
+                    Creates depts, employees, users & ABAC rules on API
+                </span>
+            </div>
+        </section>
+
+        <!-- Metrics Display -->
+        <section class="dashboard-container">
+            <div class="telemetry-grid">
+                <div class="telemetry-card" id="card-scenario">
+                    <span class="telemetry-label">Running Scenario</span>
+                    <span class="telemetry-val" style="font-size: 1.15rem; margin-top: 0.5rem;" id="val-scenario">IDLE</span>
+                    <span class="telemetry-subtext" id="val-scenario-sub">No active workloads</span>
+                </div>
+                <div class="telemetry-card success" id="card-success">
+                    <span class="telemetry-label">Success Rate</span>
+                    <span class="telemetry-val" id="val-success-rate">0.0%</span>
+                    <span class="telemetry-subtext" id="val-success-counts">0 / 0 requests</span>
+                </div>
+                <div class="telemetry-card danger" id="card-fail">
+                    <span class="telemetry-label">Failure Rate</span>
+                    <span class="telemetry-val" id="val-fail-rate">0.0%</span>
+                    <span class="telemetry-subtext" id="val-fail-counts">0 / 0 requests</span>
+                </div>
+                <div class="telemetry-card warning" id="card-latency">
+                    <span class="telemetry-label">Metrics Overview</span>
+                    <span class="telemetry-val" style="font-size: 1.25rem; margin-top: 0.35rem;" id="val-latency">0 ms avg</span>
+                    <span class="telemetry-subtext" id="val-throughput">0.0 req / sec</span>
+                </div>
+            </div>
+
+            <!-- Progress Card -->
+            <div class="glass-card" style="padding: 1.25rem; gap: 0.5rem;">
+                <div class="progress-container">
+                    <div class="progress-label-row">
+                        <span>Workload Progress</span>
+                        <span id="progress-text">0% (0/0)</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div id="progress-bar" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Graph -->
+            <div class="glass-card">
+                <div class="card-header" style="margin-bottom: 0;">
+                    <h2 class="card-title">Real-Time Traffic Distribution</h2>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Log Console -->
+            <div class="glass-card console-container">
+                <div class="console-header">
+                    <div class="console-controls">
+                        <h2 class="card-title">Terminal Console</h2>
+                        <div class="console-tabs">
+                            <div class="console-tab active" data-filter="all">All Logs</div>
+                            <div class="console-tab" data-filter="success">Success</div>
+                            <div class="console-tab" data-filter="error">Violations & Errors</div>
+                            <div class="console-tab" data-filter="system">System Info</div>
+                        </div>
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="scroll-lock-cb" checked>
+                            <span>Scroll Lock</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="console-scroller" id="console-scroller">
+                    <div class="log-entry log-system">[00:00:00.000] Console initialized. Standing by.</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Seeding Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loading-text">Generating Mock Infrastructure Databases...</div>
+    </div>
+
+    <script>
+        // API Base endpoints
+        const SIM_API = '/api/simulation';
+
+        // DOM Cache
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const seedBtn = document.getElementById('seed-btn');
+        const scenarioSelect = document.getElementById('scenario-select');
+        const requestsInput = document.getElementById('requests-input');
+        const concurrencyInput = document.getElementById('concurrency-input');
+        const targetInput = document.getElementById('target-input');
+
+        const simDot = document.getElementById('sim-status-dot');
+        const appDot = document.getElementById('app-server-dot');
+        const appBadge = document.getElementById('app-server-badge');
+        const appText = document.getElementById('app-server-text');
+
+        const valScenario = document.getElementById('val-scenario');
+        const valScenarioSub = document.getElementById('val-scenario-sub');
+        const valSuccessRate = document.getElementById('val-success-rate');
+        const valSuccessCounts = document.getElementById('val-success-counts');
+        const valFailRate = document.getElementById('val-fail-rate');
+        const valFailCounts = document.getElementById('val-fail-counts');
+        const valLatency = document.getElementById('val-latency');
+        const valThroughput = document.getElementById('val-throughput');
+
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        const consoleScroller = document.getElementById('console-scroller');
+        const scrollLockCb = document.getElementById('scroll-lock-cb');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingText = document.getElementById('loading-text');
+
+        // Log filtering state
+        let currentFilter = 'all';
+        let fullLogsCache = [];
+
+        // Realtime chart variables
+        let chartInstance;
+        const chartLimit = 30;
+        const chartLabels = Array(chartLimit).fill('');
+        const successData = Array(chartLimit).fill(0);
+        const errorData = Array(chartLimit).fill(0);
+        const latencyData = Array(chartLimit).fill(0);
+
+        // Track seen logs to prevent duplicate listings
+        const printedLogs = new Set();
+
+        // ── Initialize Chart.js ──────────────────────────────────────────────
+        function initChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            label: 'Success Rate (req/s)',
+                            data: successData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            yAxisID: 'y',
+                            fill: true
+                        },
+                        {
+                            label: 'Error/Violation (req/s)',
+                            data: errorData,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            yAxisID: 'y',
+                            fill: true
+                        },
+                        {
+                            label: 'Avg Latency (ms)',
+                            data: latencyData,
+                            borderColor: '#3b82f6',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0.3,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { display: false }
+                        },
+                        y: {
+                            position: 'left',
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#9ca3af' },
+                            title: { display: true, text: 'Throughput (req/s)', color: '#9ca3af' }
+                        },
+                        y1: {
+                            position: 'right',
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: '#9ca3af' },
+                            title: { display: true, text: 'Latency (ms)', color: '#9ca3af' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#f3f4f6', boxWidth: 15 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ── Console Log Handling ─────────────────────────────────────────────
+        function parseLogCategory(logLine) {
+            if (logLine.includes('[SUCCESS]')) return 'success';
+            if (logLine.includes('[DENIED]') || logLine.includes('[ERROR]')) return 'error';
+            return 'system';
+        }
+
+        function renderLogs() {
+            consoleScroller.innerHTML = '';
+            
+            const filtered = fullLogsCache.filter(line => {
+                if (currentFilter === 'all') return true;
+                return parseLogCategory(line) === currentFilter;
+            });
+
+            filtered.forEach(line => {
+                const div = document.createElement('div');
+                div.className = 'log-entry';
+                
+                const cat = parseLogCategory(line);
+                if (cat === 'success') div.classList.add('log-success');
+                else if (cat === 'error') div.classList.add('log-error');
+                else div.classList.add('log-system');
+
+                div.textContent = line;
+                consoleScroller.appendChild(div);
+            });
+
+            if (scrollLockCb.checked) {
+                consoleScroller.scrollTop = consoleScroller.scrollHeight;
+            }
+        }
+
+        // ── Connection Status Checks ──────────────────────────────────────────
+        async function checkTargetApiStatus() {
+            const target = targetInput.value;
+            try {
+                // Perform simple fetch check
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                
+                // Hitting the login page just to see if it responds (it will return 405 or 400, but it responds!)
+                const res = await fetch(`${target}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                appDot.className = 'badge-dot dot-green';
+                appText.textContent = 'API APP: ONLINE';
+                appBadge.title = "Target service is responding";
+            } catch (err) {
+                appDot.className = 'badge-dot dot-red';
+                appText.textContent = 'API APP: OFFLINE';
+                appBadge.title = "Target service not found. Is it running on port 8080?";
+            }
+        }
+
+        // ── Telemetry Polling ────────────────────────────────────────────────
+        async function pollStatus() {
+            try {
+                const res = await fetch(`${SIM_API}/status`);
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // 1. Update running scenario UI
+                if (data.active) {
+                    valScenario.textContent = data.scenario;
+                    valScenarioSub.textContent = `Simulation running at concurrency: ${concurrencyInput.value}`;
+                    simDot.className = 'pulse-icon active';
+                    
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    seedBtn.disabled = true;
+                } else {
+                    valScenario.textContent = 'IDLE';
+                    valScenarioSub.textContent = 'Workloads suspended';
+                    simDot.className = 'pulse-icon success';
+
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    seedBtn.disabled = false;
+                }
+
+                // 2. Metrics percentages
+                const total = data.requestsCompleted;
+                const totalExpected = data.requestsTotal;
+                
+                let successRate = 0.0;
+                let failRate = 0.0;
+                
+                if (total > 0) {
+                    successRate = (data.requestsSuccessful / total) * 100;
+                    failRate = (data.requestsFailed / total) * 100;
+                }
+
+                valSuccessRate.textContent = `${successRate.toFixed(1)}%`;
+                valSuccessCounts.textContent = `${data.requestsSuccessful} / ${total} requests`;
+
+                valFailRate.textContent = `${failRate.toFixed(1)}%`;
+                valFailCounts.textContent = `${data.requestsFailed} / ${total} requests`;
+
+                valLatency.textContent = `${data.averageLatencyMs.toFixed(0)} ms avg`;
+                valThroughput.textContent = `${data.throughputRequestsPerSec.toFixed(1)} req / sec`;
+
+                // 3. Progress bar
+                let progPct = 0;
+                if (totalExpected > 0) {
+                    progPct = Math.min(100, Math.floor((total / totalExpected) * 100));
+                }
+                progressText.textContent = `${progPct}% (${total} / ${totalExpected})`;
+                progressBar.style.width = `${progPct}%`;
+
+                // 4. Update Logs
+                let hasNewLogs = false;
+                data.logs.forEach(line => {
+                    if (!printedLogs.has(line)) {
+                        printedLogs.add(line);
+                        fullLogsCache.push(line);
+                        hasNewLogs = true;
+                    }
+                });
+
+                if (hasNewLogs) {
+                    renderLogs();
+                }
+
+                // 5. Update chart data
+                if (data.active) {
+                    successData.push(data.throughputRequestsPerSec * (successRate / 100));
+                    errorData.push(data.throughputRequestsPerSec * (failRate / 100));
+                    latencyData.push(data.averageLatencyMs);
+                } else {
+                    successData.push(0);
+                    errorData.push(0);
+                    latencyData.push(0);
+                }
+
+                if (successData.length > chartLimit) {
+                    successData.shift();
+                    errorData.shift();
+                    latencyData.shift();
+                }
+
+                chartInstance.update();
+
+            } catch (err) {
+                console.error("Error polling telemetry status: ", err);
+            }
+        }
+
+        // ── Click Action Handlers ────────────────────────────────────────────
+        async function startSimulation() {
+            const reqData = {
+                scenario: scenarioSelect.value,
+                requests: parseInt(requestsInput.value),
+                concurrency: parseInt(concurrencyInput.value),
+                targetUrl: targetInput.value
+            };
+
+            try {
+                // Clear logged set before starting a new run
+                printedLogs.clear();
+                fullLogsCache = [];
+                renderLogs();
+
+                const res = await fetch(`${SIM_API}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reqData)
+                });
+
+                if (res.ok) {
+                    addCustomLog("SYSTEM", "Simulated workload triggered successfully.");
+                } else {
+                    const err = await res.json();
+                    alert(`Failed to start: ${err.message}`);
+                }
+            } catch (err) {
+                alert(`Error communicating with simulation server: ${err.message}`);
+            }
+        }
+
+        async function stopSimulation() {
+            try {
+                const res = await fetch(`${SIM_API}/stop`, { method: 'POST' });
+                if (res.ok) {
+                    addCustomLog("SYSTEM", "Simulated workload stop requested.");
+                }
+            } catch (err) {
+                alert(`Error stopping simulation: ${err.message}`);
+            }
+        }
+
+        async function triggerDataSeeding() {
+            loadingOverlay.style.display = 'flex';
+            loadingText.textContent = "Setting up mock departments, roles, users, and ABAC rules...";
+            
+            try {
+                const res = await fetch(`${SIM_API}/generate-data`, { method: 'POST' });
+                const data = await res.json();
+                
+                loadingOverlay.style.display = 'none';
+                
+                // Add the seeding logs to our local console display
+                if (data.logs) {
+                    data.logs.split('\n').forEach(line => {
+                        if (line.trim()) {
+                            fullLogsCache.push(line);
+                        }
+                    });
+                    renderLogs();
+                }
+
+                if (res.ok) {
+                    alert("Database seeded successfully! Valid user credentials and active ABAC restrictions have been configured.");
+                } else {
+                    alert(`Seeding failed: ${data.message}. Check the console output for exact logs.`);
+                }
+            } catch (err) {
+                loadingOverlay.style.display = 'none';
+                alert(`Network error triggering database seed: ${err.message}`);
+            }
+        }
+
+        function addCustomLog(category, msg) {
+            const time = new Date().toTimeString().split(' ')[0] + '.000';
+            const line = `[${time}] [${category}] ${msg}`;
+            fullLogsCache.push(line);
+            renderLogs();
+        }
+
+        // ── Page Event Setup ─────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            
+            startBtn.addEventListener('click', startSimulation);
+            stopBtn.addEventListener('click', stopSimulation);
+            seedBtn.addEventListener('click', triggerDataSeeding);
+
+            // Filter tabs binding
+            document.querySelectorAll('.console-tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    document.querySelectorAll('.console-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentFilter = tab.getAttribute('data-filter');
+                    renderLogs();
+                });
+            });
+
+            // Start polling telemetry and target app health status
+            setInterval(pollStatus, 800);
+            setInterval(checkTargetApiStatus, 3000);
+            checkTargetApiStatus(); // Proactive check
+        });
+    </script>
+</body>
+</html>
