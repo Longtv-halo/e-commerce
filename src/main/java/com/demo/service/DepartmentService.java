@@ -30,7 +30,6 @@ public class DepartmentService {
 
     private final DepartmentsRepository departmentsRepository;
     private final EmployeesRepository employeesRepository;
-    private final EmployeeService employeeService;
 
     public BaseResponse<List<ResponseDepartmentBean>> getDepartmentsByNamePaging(SearchDepartmentRequest request) {
         Pageable pageable = buildPageable(request);
@@ -215,5 +214,3 @@ public class DepartmentService {
     }
 
 }
-
-

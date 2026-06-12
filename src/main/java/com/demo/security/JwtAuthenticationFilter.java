@@ -31,6 +31,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String token = getTokenFromRequest(request);
 
+            if (request.getRequestURI().startsWith("/actuator")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
                 String username = jwtTokenProvider.getUsernameFromToken(token);
                 List<GrantedAuthority> authorities = jwtTokenProvider.getAuthoritiesFromToken(token);
