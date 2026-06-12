@@ -1,0 +1,16 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: simulation-service
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+target:
+  url: http://localhost:8080
+  admin:
+    username: admin
+    password: admin123
