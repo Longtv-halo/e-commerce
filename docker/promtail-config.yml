@@ -1,0 +1,25 @@
+server:
+  http_listen_port: 9080
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: springboot
+
+    static_configs:
+      - targets:
+          - localhost
+
+        labels:
+          job: springboot
+          app: ecommerce
+
+          __path__: /logs/*.log
+  - job_name: postgres
+    static_configs:
+          - targets:
+            - postgres-exporter:9187

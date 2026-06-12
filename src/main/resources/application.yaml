@@ -1,8 +1,13 @@
+logging:
+  file:
+    name: D:/e-commerce/logs/application.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"
 spring:
   application:
     name: study
   datasource:
-    url: jdbc:postgresql://localhost:5432/ecommerce
+    url: jdbc:postgresql://localhost:5433/ecommerce
     username: longtv1
     password: "09052001"
     driver-class-name: org.postgresql.Driver
@@ -31,3 +36,24 @@ minio:
 jwt:
   secret: dGhpc0lzQVN1cGVyU2VjcmV0S2V5Rm9ySldUQXV0aGVudGljYXRpb25JblNwcmluZ0Jvb3RBcHA=
   expiration: 86400000
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,circuitbreakers
+
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: ecommerce-service
+resilience4j:
+  circuitbreaker:
+    instances:
+      paymentService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        waitDurationInOpenState: 30s

@@ -32,17 +32,19 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
+        //Check username exist, if user exist, it will reject
         if (usersRepository.existsByUsername(request.getUsername())) {
             throw new BadRequestException("Username '" + request.getUsername() + "' is already taken");
         }
 
+        //Autoregister have ROLE_USER
         Role defaultRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new ResourceNotFoundException("Default role ROLE_USER not found"));
 
         Users user = Users.builder()
                 .name(request.getName())
                 .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
+                .password(passwordEncoder.encode(request.getPassword()))// password must be encoded
                 .roles(Set.of(defaultRole))
                 .enabled(true)
                 .build();
