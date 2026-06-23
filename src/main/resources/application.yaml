@@ -1,17 +1,59 @@
+logging:
+  file:
+    name: D:/e-commerce/logs/application.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"
 spring:
   application:
     name: study
   datasource:
-    url: jdbc:postgresql://192.168.102.10:5432/ecommerce
+    url: jdbc:postgresql://localhost:5433/ecommerce
     username: longtv1
-    password: postgresql
+    password: "09052001"
     driver-class-name: org.postgresql.Driver
   jpa:
+    defer-datasource-initialization: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    baseline-description: "Initial baseline"
+    locations: classpath:db/migration
+    out-of-order: false
+    validate-on-migrate: false
+minio:
+  url: localhost:9000
+  access-key: admin
+  secret-key: StrongPassword123!
+  bucket-name: my-documents
+jwt:
+  secret: dGhpc0lzQVN1cGVyU2VjcmV0S2V5Rm9ySldUQXV0aGVudGljYXRpb25JblNwcmluZ0Jvb3RBcHA=
+  expiration: 86400000
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,circuitbreakers
 
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: ecommerce-service
+resilience4j:
+  circuitbreaker:
+    instances:
+      paymentService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        minimumNumberOfCalls: 5
+        waitDurationInOpenState: 30s

@@ -1,0 +1,47 @@
+name: Deploy Infra
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'docker/docker-composer.dev.yml'
+      - 'docker/promtail-config.yml'
+      - 'prometheus/**'
+      - '.gitea/workflows/build-Infra.yml'
+
+concurrency:
+  group: deploy-infra
+  cancel-in-progress: false
+
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Validate infrastructure configuration
+        run: |
+          docker compose -f docker/docker-composer.dev.yml config --quiet
+
+      - name: Deploy infrastructure services
+        run: |
+          docker compose -f docker/docker-composer.dev.yml pull \
+            postgres \
+            postgres-exporter \
+            minio \
+            prometheus \
+            loki \
+            promtail \
+            grafana
+
+          docker compose -f docker/docker-composer.dev.yml up --detach \
+            postgres \
+            postgres-exporter \
+            minio \
+            prometheus \
+            loki \
+            promtail \
+            grafana

@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Commerce DB — Mock Data Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0d0f1a;
+    --surface:   #141726;
+    --surface2:  #1c2038;
+    --border:    #2a2f52;
+    --primary:   #7c6af7;
+    --primary2:  #a78bfa;
+    --accent:    #06d6a0;
+    --accent2:   #0ea5e9;
+    --warn:      #f59e0b;
+    --danger:    #ef4444;
+    --text:      #e2e8f0;
+    --muted:     #64748b;
+    --pk:        #fbbf24;
+    --fk:        #34d399;
+    --idx:       #60a5fa;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ─── Header ─── */
+  header {
+    background: linear-gradient(135deg, #1a1040 0%, #0f1631 50%, #0a1628 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; gap: 1.5rem;
+    height: 60px;
+  }
+  .logo {
+    font-weight: 700; font-size: 1.1rem; letter-spacing: -.5px;
+    background: linear-gradient(135deg, var(--primary2), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    white-space: nowrap;
+  }
+  .header-sep { flex: 1; }
+  .db-badge {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: .3rem .8rem;
+    font-size: .75rem; font-family: 'JetBrains Mono', monospace;
+    color: var(--accent); display: flex; align-items: center; gap: .4rem;
+  }
+
+  /* ─── Layout ─── */
+  .app { display: flex; min-height: calc(100vh - 60px); }
+
+  /* ─── Sidebar ─── */
+  aside {
+    width: 220px; min-width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 1rem 0;
+    display: flex; flex-direction: column; gap: .25rem;
+  }
+  .aside-title {
+    font-size: .65rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); padding: .5rem 1.2rem 0;
+  }
+  .table-link {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .55rem 1.2rem; cursor: pointer;
+    font-size: .82rem; color: var(--muted);
+    border-left: 3px solid transparent;
+    transition: all .15s ease;
+  }
+  .table-link:hover { color: var(--text); background: var(--surface2); }
+  .table-link.active { color: var(--primary2); border-left-color: var(--primary); background: #1c1a4020; }
+  .table-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .sidebar-sep { height: 1px; background: var(--border); margin: .5rem 1rem; }
+
+  /* ─── Main ─── */
+  main {
+    flex: 1; overflow-y: auto; padding: 2rem;
+    display: flex; flex-direction: column; gap: 2rem;
+  }
+
+  /* ─── Table card ─── */
+  .db-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    scroll-margin-top: 80px;
+    transition: box-shadow .2s;
+  }
+  .db-table:hover { box-shadow: 0 0 0 1px var(--primary) inset, 0 8px 32px #7c6af715; }
+
+  .table-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .9rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-name-row { display: flex; align-items: center; gap: .75rem; }
+  .table-icon { font-size: 1rem; }
+  .table-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .9rem; font-weight: 600; color: var(--primary2);
+  }
+  .table-desc { font-size: .75rem; color: var(--muted); }
+  .row-count {
+    font-size: .72rem; font-weight: 600;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: .2rem .6rem; color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ─── Data table ─── */
+  .data-table { width: 100%; border-collapse: collapse; }
+
+  .data-table thead th {
+    background: var(--surface2);
+    padding: .5rem .9rem;
+    text-align: left;
+    font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .data-table thead th:first-child { border-radius: 0; }
+
+  .data-table tbody tr {
+    border-bottom: 1px solid #1e2240;
+    transition: background .12s;
+  }
+  .data-table tbody tr:last-child { border-bottom: none; }
+  .data-table tbody tr:hover { background: #1c2038aa; }
+
+  .data-table td {
+    padding: .55rem .9rem;
+    font-size: .8rem;
+    vertical-align: middle;
+  }
+
+  /* ─── Cell types ─── */
+  .cell-id {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--pk); font-weight: 500;
+  }
+  .cell-fk {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--fk); font-weight: 500;
+  }
+  .cell-mono {
+    font-family: 'JetBrains Mono', monospace; font-size: .78rem;
+    color: var(--text);
+  }
+  .cell-bool-true {
+    display: inline-flex; align-items: center; gap: .3rem;
+    background: #06d6a015; color: var(--accent);
+    border: 1px solid #06d6a030; border-radius: 5px;
+    padding: .15rem .5rem; font-size: .72rem; font-weight: 500;
+  }
+  .cell-bool-false {
+    display: inline-flex; align-items: center; gap: .3rem;
+    background: #ef444415; color: #ef4444;
+    border: 1px solid #ef444430; border-radius: 5px;
+    padding: .15rem .5rem; font-size: .72rem; font-weight: 500;
+  }
+  .cell-tag {
+    display: inline-block;
+    padding: .15rem .55rem; border-radius: 5px;
+    font-size: .72rem; font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .tag-role   { background: #7c6af718; color: var(--primary2); border: 1px solid #7c6af740; }
+  .tag-perm   { background: #0ea5e918; color: var(--accent2);  border: 1px solid #0ea5e940; }
+  .tag-allow  { background: #06d6a018; color: var(--accent);   border: 1px solid #06d6a040; }
+  .tag-deny   { background: #ef444418; color: #ef4444;         border: 1px solid #ef444440; }
+  .tag-dept   { background: #f59e0b18; color: var(--warn);     border: 1px solid #f59e0b40; }
+  .tag-all    { background: #60a5fa18; color: var(--idx);      border: 1px solid #60a5fa40; }
+  .tag-time   { background: #a855f718; color: #d8b4fe;         border: 1px solid #a855f740; }
+
+  .cell-null  { color: var(--muted); font-style: italic; font-size: .75rem; }
+  .cell-pass  { font-family: 'JetBrains Mono', monospace; color: var(--muted); letter-spacing: .05em; }
+
+  /* ─── Schema strip ─── */
+  .schema-strip {
+    display: flex; gap: .4rem; flex-wrap: wrap;
+    padding: .5rem 1.2rem;
+    background: #10121e; border-top: 1px solid var(--border);
+  }
+  .schema-col {
+    font-size: .68rem; font-family: 'JetBrains Mono', monospace;
+    display: flex; align-items: center; gap: .25rem;
+  }
+  .col-name { color: var(--text); }
+  .col-type { color: var(--muted); }
+  .col-sep  { color: var(--border); margin: 0 .1rem; }
+
+  /* ─── Legend ─── */
+  .legend {
+    display: flex; gap: 1.2rem; flex-wrap: wrap;
+    padding: 1rem 1.2rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; font-size: .76rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: .5rem; }
+  .legend-dot  { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* ─── ERD banner ─── */
+  .erd-banner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .72rem;
+    line-height: 1.8;
+    color: var(--muted);
+    overflow-x: auto;
+  }
+  .erd-banner .hl-table { color: var(--primary2); font-weight: 600; }
+  .erd-banner .hl-pk    { color: var(--pk); }
+  .erd-banner .hl-fk    { color: var(--fk); }
+  .erd-banner .hl-rel   { color: var(--accent2); }
+  .erd-banner .hl-time  { color: #d8b4fe; }
+
+  /* ─── Tooltip ─── */
+  [data-tip] { position: relative; cursor: help; }
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%);
+    background: #2a2f52; color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: .3rem .7rem; font-size: .7rem; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity .15s;
+    z-index: 99;
+  }
+  [data-tip]:hover::after { opacity: 1; }
+
+  /* ─── Section label ─── */
+  .section-label {
+    font-size: .7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: -.5rem;
+  }
+
+  /* ─── Relations section ─── */
+  .relation-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;
+  }
+  .rel-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem;
+    display: flex; flex-direction: column; gap: .5rem;
+  }
+  .rel-title { font-size: .78rem; font-weight: 600; color: var(--text); }
+  .rel-line  { display: flex; align-items: center; gap: .5rem; font-size: .73rem; }
+  .rel-tbl   { color: var(--primary2); font-family: 'JetBrains Mono', monospace; }
+  .rel-arrow { color: var(--accent2); font-weight: 700; }
+  .rel-desc  { font-size: .7rem; color: var(--muted); }
+
+  @media (max-width: 768px) {
+    aside { display: none; }
+    main  { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ───── Header ───── -->
+<header>
+  <span class="logo">🗄️ E-Commerce DB Explorer</span>
+  <div class="header-sep"></div>
+  <div class="db-badge">🐘 PostgreSQL &nbsp;·&nbsp; ecommerce</div>
+  <div class="db-badge" style="color:var(--primary2)">8 tables</div>
+</header>
+
+<div class="app">
+
+<!-- ───── Sidebar ───── -->
+<aside>
+  <div class="aside-title">Tables</div>
+
+  <a class="table-link active" onclick="scrollTo('t-departments')">
+    <span class="table-dot" style="background:#f59e0b"></span> departments
+  </a>
+  <a class="table-link" onclick="scrollTo('t-employees')">
+    <span class="table-dot" style="background:#06d6a0"></span> employees
+  </a>
+  <a class="table-link" onclick="scrollTo('t-users')">
+    <span class="table-dot" style="background:#7c6af7"></span> users
+  </a>
+  <a class="table-link" onclick="scrollTo('t-roles')">
+    <span class="table-dot" style="background:#0ea5e9"></span> roles
+  </a>
+  <a class="table-link" onclick="scrollTo('t-permissions')">
+    <span class="table-dot" style="background:#60a5fa"></span> permissions
+  </a>
+
+  <div class="sidebar-sep"></div>
+  <div class="aside-title">Junction</div>
+
+  <a class="table-link" onclick="scrollTo('t-user-roles')">
+    <span class="table-dot" style="background:#a78bfa"></span> user_roles
+  </a>
+  <a class="table-link" onclick="scrollTo('t-role-perms')">
+    <span class="table-dot" style="background:#818cf8"></span> role_permissions
+  </a>
+
+  <div class="sidebar-sep"></div>
+  <div class="aside-title">ABAC</div>
+
+  <a class="table-link" onclick="scrollTo('t-policies')">
+    <span class="table-dot" style="background:#d8b4fe"></span> access_policies
+  </a>
+</aside>
+
+<!-- ───── Main ───── -->
+<main>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--pk)"></div>
+      <span>PK — Primary Key</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--fk)"></div>
+      <span>FK — Foreign Key</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--idx)"></div>
+      <span>IDX — Indexed</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--accent)"></div>
+      <span>ALLOW policy</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--danger)"></div>
+      <span>DENY policy</span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────── departments ─── -->
+  <div class="db-table" id="t-departments">
+    <div class="table-header">
+      <div class="table-name-row">
+        <span class="table-icon">🏢</span>
+        <span class="table-name">departments</span>
+        <span class="table-desc">Phòng ban trong tổ chức</span>
+      </div>
+      <span class="row-count">4 rows</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th data-tip="BIGSERIAL PRIMARY KEY">🔑 id</th>
+          <th data-tip="VARCHAR NOT NULL">name</th>
+          <th data-tip="BOOLEAN DEFAULT false">deleted</th>
+          <th data-tip="FK → employees.id (leader)">👤 leader_id</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cell-id">1</td>
+          <td><span class="cell-tag tag-dept">IT</span></td>
+          <td><span class="cell-bool-true">✓ false</span></td>
+          <td class="cell-fk">→ 1</td>
+        </tr>
+        <tr>
+          <td class="cell-id">2</td>
+          <td><span class="cell-tag tag-dept">HR</span></td>
+          <td><span class="cell-bool-true">✓ false</span></td>
+          <td class="cell-fk">→ 4</td>
+        </tr>
+        <tr>
+          <td class="cell-id">3</td>
+          <td><span class="cell-tag tag-dept">Finance</span></td>
+          <td><span class="cell-bool-true">✓ false</span></td>
+          <td class="cell-fk">→ 7</td>
+        </tr>
+        <tr>
+          <td class="cell-id">4</td>
+          <td><span class="cell-tag tag-dept">Marketing</span></td>
+          <td><span class="cell-bool-false">✗ true</span></td>
+          <td class="cell-null">NULL</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="schema-strip">
+      <span class="schema-col"><span class="col-name" style="color:var(--pk)">id</span><span class="col-sep">:</span><span class="col-type">BIGSERIAL PK</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">name</span><span class="col-sep">:</span><span class="col-type">VARCHAR NOT NULL</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">deleted</span><span class="col-sep">:</span><span class="col-type">BOOL DEFAULT false</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name" style="color:var(--fk)">leader_id</span><span class="col-sep">:</span><span class="col-type">BIGINT FK→employees</span></span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────── employees ─── -->
+  <div class="db-table" id="t-employees">
+    <div class="table-header">
+      <div class="table-name-row">
+        <span class="table-icon">👷</span>
+        <span class="table-name">employees</span>
+        <span class="table-desc">Nhân viên thuộc phòng ban</span>
+      </div>
+      <span class="row-count">8 rows</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>🔑 id</th>
+          <th>name</th>
+          <th>email</th>
+          <th>is_owner</th>
+          <th>deleted</th>
+          <th>🔗 department_id</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cell-id">1</td>
+          <td>Nguyễn Văn An</td>
+          <td class="cell-mono">an.nguyen@it.co</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+          <td><span class="cell-bool-true">✓ false</span></td>
+          <td class="cell-fk">→ 1 (IT)</td>
+        </tr>
+        <tr>
+          <td class="cell-id">2</td>
+          <td>Trần Thị Bình</td>
+          <td class="cell-mono">binh.tran@it.co</td>
+          <td><span class="cell-bool-false">✗ false</span></td>
+          <td><span class="cell-bool-true">✓ false</span></td>
+          <td class="cell-fk">→ 1 (IT)</td>
+        </tr>
+        <tr>
+          <td class="cell-id">3</td>
+          <td>Lê Minh Cường</td>
+          <td class="cell-mono">cuong.le@it.co</td>
+          <td><span class="cell-bool-false">✗ false</span></td>
+          <td><span class="cell-bool-true">✓ false</span></td>
+          <td class="cell-fk">→ 1 (IT)</td>
+        </tr>
+        <tr>
+          <td class="cell-id">4</td>
+          <td>Phạm Thu Dung</td>
+          <td class="cell-mono">dung.pham@hr.co</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+          <td><span class="cell-bool-true">✓ false</span></td>
+          <td class="cell-fk">→ 2 (HR)</td>
+        </tr>
+        <tr>
+          <td class="cell-id">5</td>
+          <td>Hoàng Đình Em</td>
+          <td class="cell-mono">em.hoang@hr.co</td>
+          <td><span class="cell-bool-false">✗ false</span></td>
+          <td><span class="cell-bool-true">✓ false</span></td>
+          <td class="cell-fk">→ 2 (HR)</td>
+        </tr>
+        <tr>
+          <td class="cell-id">6</td>
+          <td>Vũ Thị Phương</td>
+          <td class="cell-mono">phuong.vu@hr.co</td>
+          <td><span class="cell-bool-false">✗ false</span></td>
+          <td><span class="cell-bool-false">✗ true</span></td>
+          <td class="cell-fk">→ 2 (HR)</td>
+        </tr>
+        <tr>
+          <td class="cell-id">7</td>
+          <td>Đặng Quốc Giang</td>
+          <td class="cell-mono">giang.dang@finance.co</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+          <td><span class="cell-bool-true">✓ false</span></td>
+          <td class="cell-fk">→ 3 (Finance)</td>
+        </tr>
+        <tr>
+          <td class="cell-id">8</td>
+          <td>Bùi Ngọc Hà</td>
+          <td class="cell-mono">ha.bui@finance.co</td>
+          <td><span class="cell-bool-false">✗ false</span></td>
+          <td><span class="cell-bool-true">✓ false</span></td>
+          <td class="cell-fk">→ 3 (Finance)</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="schema-strip">
+      <span class="schema-col"><span class="col-name" style="color:var(--pk)">id</span><span class="col-sep">:</span><span class="col-type">BIGSERIAL PK</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">name</span><span class="col-sep">:</span><span class="col-type">VARCHAR NOT NULL</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">email</span><span class="col-sep">:</span><span class="col-type">VARCHAR UNIQUE</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">is_owner</span><span class="col-sep">:</span><span class="col-type">BOOL</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">deleted</span><span class="col-sep">:</span><span class="col-type">BOOL DEFAULT false</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name" style="color:var(--fk)">department_id</span><span class="col-sep">:</span><span class="col-type">BIGINT FK→departments</span></span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────── users ─── -->
+  <div class="db-table" id="t-users">
+    <div class="table-header">
+      <div class="table-name-row">
+        <span class="table-icon">👤</span>
+        <span class="table-name">users</span>
+        <span class="table-desc">Tài khoản đăng nhập hệ thống</span>
+      </div>
+      <span class="row-count">5 rows</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>🔑 id</th>
+          <th>name</th>
+          <th>username</th>
+          <th>password</th>
+          <th>enabled</th>
+          <th>🔗 employee_id</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cell-id">1</td>
+          <td>System Admin</td>
+          <td class="cell-mono">admin</td>
+          <td class="cell-pass">$2a$10$…bcrypt…</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+          <td class="cell-null">NULL (no dept)</td>
+        </tr>
+        <tr>
+          <td class="cell-id">2</td>
+          <td>Nguyễn Văn An</td>
+          <td class="cell-mono">an.nguyen</td>
+          <td class="cell-pass">$2a$10$…bcrypt…</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+          <td class="cell-fk">→ 1 (IT leader)</td>
+        </tr>
+        <tr>
+          <td class="cell-id">3</td>
+          <td>Phạm Thu Dung</td>
+          <td class="cell-mono">dung.pham</td>
+          <td class="cell-pass">$2a$10$…bcrypt…</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+          <td class="cell-fk">→ 4 (HR leader)</td>
+        </tr>
+        <tr>
+          <td class="cell-id">4</td>
+          <td>Trần Thị Bình</td>
+          <td class="cell-mono">binh.tran</td>
+          <td class="cell-pass">$2a$10$…bcrypt…</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+          <td class="cell-fk">→ 2 (IT member)</td>
+        </tr>
+        <tr>
+          <td class="cell-id">5</td>
+          <td>Vũ Thị Phương</td>
+          <td class="cell-mono">phuong.vu</td>
+          <td class="cell-pass">$2a$10$…bcrypt…</td>
+          <td><span class="cell-bool-false">✗ false</span></td>
+          <td class="cell-fk">→ 6 (deleted emp)</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="schema-strip">
+      <span class="schema-col"><span class="col-name" style="color:var(--pk)">id</span><span class="col-sep">:</span><span class="col-type">BIGSERIAL PK</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">username</span><span class="col-sep">:</span><span class="col-type">VARCHAR UNIQUE NOT NULL</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">password</span><span class="col-sep">:</span><span class="col-type">VARCHAR (BCrypt hash)</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">enabled</span><span class="col-sep">:</span><span class="col-type">BOOL DEFAULT true</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name" style="color:var(--fk)">employee_id</span><span class="col-sep">:</span><span class="col-type">BIGINT FK→employees (ABAC)</span></span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────── roles ─── -->
+  <div class="db-table" id="t-roles">
+    <div class="table-header">
+      <div class="table-name-row">
+        <span class="table-icon">🎭</span>
+        <span class="table-name">roles</span>
+        <span class="table-desc">Vai trò trong hệ thống (RBAC)</span>
+      </div>
+      <span class="row-count">3 rows</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>🔑 id</th>
+          <th>name</th>
+          <th>description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cell-id">1</td>
+          <td><span class="cell-tag tag-role">ROLE_USER</span></td>
+          <td style="color:var(--muted);font-size:.78rem">Regular user — read-only access</td>
+        </tr>
+        <tr>
+          <td class="cell-id">2</td>
+          <td><span class="cell-tag tag-role">ROLE_MANAGER</span></td>
+          <td style="color:var(--muted);font-size:.78rem">Department manager — can manage employees and departments</td>
+        </tr>
+        <tr>
+          <td class="cell-id">3</td>
+          <td><span class="cell-tag tag-role">ROLE_ADMIN</span></td>
+          <td style="color:var(--muted);font-size:.78rem">System administrator — full access</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="schema-strip">
+      <span class="schema-col"><span class="col-name" style="color:var(--pk)">id</span><span class="col-sep">:</span><span class="col-type">BIGSERIAL PK</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">name</span><span class="col-sep">:</span><span class="col-type">VARCHAR UNIQUE NOT NULL</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">description</span><span class="col-sep">:</span><span class="col-type">VARCHAR</span></span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────── permissions ─── -->
+  <div class="db-table" id="t-permissions">
+    <div class="table-header">
+      <div class="table-name-row">
+        <span class="table-icon">🔐</span>
+        <span class="table-name">permissions</span>
+        <span class="table-desc">Quyền chi tiết (granular permissions)</span>
+      </div>
+      <span class="row-count">9 rows</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>🔑 id</th>
+          <th>name</th>
+          <th>description</th>
+          <th>enabled</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cell-id">1</td>
+          <td><span class="cell-tag tag-perm">EMPLOYEE_READ</span></td>
+          <td style="color:var(--muted);font-size:.78rem">View employee list and details</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+        </tr>
+        <tr>
+          <td class="cell-id">2</td>
+          <td><span class="cell-tag tag-perm">EMPLOYEE_WRITE</span></td>
+          <td style="color:var(--muted);font-size:.78rem">Create and update employees</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+        </tr>
+        <tr>
+          <td class="cell-id">3</td>
+          <td><span class="cell-tag tag-perm">EMPLOYEE_DELETE</span></td>
+          <td style="color:var(--muted);font-size:.78rem">Delete employees</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+        </tr>
+        <tr>
+          <td class="cell-id">4</td>
+          <td><span class="cell-tag tag-perm">DEPARTMENT_READ</span></td>
+          <td style="color:var(--muted);font-size:.78rem">View department list and details</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+        </tr>
+        <tr>
+          <td class="cell-id">5</td>
+          <td><span class="cell-tag tag-perm">DEPARTMENT_WRITE</span></td>
+          <td style="color:var(--muted);font-size:.78rem">Create and update departments</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+        </tr>
+        <tr>
+          <td class="cell-id">6</td>
+          <td><span class="cell-tag tag-perm">DEPARTMENT_DELETE</span></td>
+          <td style="color:var(--muted);font-size:.78rem">Delete departments</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+        </tr>
+        <tr>
+          <td class="cell-id">7</td>
+          <td><span class="cell-tag tag-perm">USER_READ</span></td>
+          <td style="color:var(--muted);font-size:.78rem">View users</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+        </tr>
+        <tr>
+          <td class="cell-id">8</td>
+          <td><span class="cell-tag tag-perm">USER_MANAGE</span></td>
+          <td style="color:var(--muted);font-size:.78rem">Manage users: assign roles, lock accounts</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+        </tr>
+        <tr>
+          <td class="cell-id">9</td>
+          <td><span class="cell-tag tag-perm">ROLE_MANAGE</span></td>
+          <td style="color:var(--muted);font-size:.78rem">Manage roles and permissions</td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="schema-strip">
+      <span class="schema-col"><span class="col-name" style="color:var(--pk)">id</span><span class="col-sep">:</span><span class="col-type">BIGSERIAL PK</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">name</span><span class="col-sep">:</span><span class="col-type">VARCHAR UNIQUE NOT NULL</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">description</span><span class="col-sep">:</span><span class="col-type">VARCHAR</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">enabled</span><span class="col-sep">:</span><span class="col-type">BOOL DEFAULT true</span></span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────── user_roles ─── -->
+  <div class="section-label">Junction Tables (Many-to-Many)</div>
+
+  <div class="db-table" id="t-user-roles">
+    <div class="table-header">
+      <div class="table-name-row">
+        <span class="table-icon">🔀</span>
+        <span class="table-name">user_roles</span>
+        <span class="table-desc">Mapping user ↔ role (N:N)</span>
+      </div>
+      <span class="row-count">5 rows</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>🔗 user_id</th>
+          <th>username</th>
+          <th>🔗 role_id</th>
+          <th>role name</th>
+          <th>Kết quả quyền</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cell-fk">→ 1</td>
+          <td class="cell-mono">admin</td>
+          <td class="cell-fk">→ 3</td>
+          <td><span class="cell-tag tag-role">ROLE_ADMIN</span></td>
+          <td style="font-size:.72rem;color:var(--muted)">Tất cả 9 permissions</td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 2</td>
+          <td class="cell-mono">an.nguyen</td>
+          <td class="cell-fk">→ 2</td>
+          <td><span class="cell-tag tag-role">ROLE_MANAGER</span></td>
+          <td style="font-size:.72rem;color:var(--muted)">EMP_R/W + DEPT_R/W</td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 3</td>
+          <td class="cell-mono">dung.pham</td>
+          <td class="cell-fk">→ 2</td>
+          <td><span class="cell-tag tag-role">ROLE_MANAGER</span></td>
+          <td style="font-size:.72rem;color:var(--muted)">EMP_R/W + DEPT_R/W</td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 4</td>
+          <td class="cell-mono">binh.tran</td>
+          <td class="cell-fk">→ 1</td>
+          <td><span class="cell-tag tag-role">ROLE_USER</span></td>
+          <td style="font-size:.72rem;color:var(--muted)">EMP_READ + DEPT_READ</td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 5</td>
+          <td class="cell-mono">phuong.vu</td>
+          <td class="cell-fk">→ 1</td>
+          <td><span class="cell-tag tag-role">ROLE_USER</span></td>
+          <td style="font-size:.72rem;color:var(--muted)">EMP_READ + DEPT_READ (disabled)</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="schema-strip">
+      <span class="schema-col" style="color:var(--warn)">⚠️ Không có PK riêng — composite PK (user_id, role_id)</span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name" style="color:var(--fk)">user_id</span><span class="col-sep">:</span><span class="col-type">BIGINT FK→users</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name" style="color:var(--fk)">role_id</span><span class="col-sep">:</span><span class="col-type">BIGINT FK→roles</span></span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────── role_permissions ─── -->
+  <div class="db-table" id="t-role-perms">
+    <div class="table-header">
+      <div class="table-name-row">
+        <span class="table-icon">🔀</span>
+        <span class="table-name">role_permissions</span>
+        <span class="table-desc">Mapping role ↔ permission (N:N)</span>
+      </div>
+      <span class="row-count">13 rows</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>🔗 role_id</th>
+          <th>role name</th>
+          <th>🔗 permission_id</th>
+          <th>permission name</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cell-fk">→ 1</td>
+          <td><span class="cell-tag tag-role">ROLE_USER</span></td>
+          <td class="cell-fk">→ 1</td>
+          <td><span class="cell-tag tag-perm">EMPLOYEE_READ</span></td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 1</td>
+          <td><span class="cell-tag tag-role">ROLE_USER</span></td>
+          <td class="cell-fk">→ 4</td>
+          <td><span class="cell-tag tag-perm">DEPARTMENT_READ</span></td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 2</td>
+          <td><span class="cell-tag tag-role">ROLE_MANAGER</span></td>
+          <td class="cell-fk">→ 1</td>
+          <td><span class="cell-tag tag-perm">EMPLOYEE_READ</span></td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 2</td>
+          <td><span class="cell-tag tag-role">ROLE_MANAGER</span></td>
+          <td class="cell-fk">→ 2</td>
+          <td><span class="cell-tag tag-perm">EMPLOYEE_WRITE</span></td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 2</td>
+          <td><span class="cell-tag tag-role">ROLE_MANAGER</span></td>
+          <td class="cell-fk">→ 4</td>
+          <td><span class="cell-tag tag-perm">DEPARTMENT_READ</span></td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 2</td>
+          <td><span class="cell-tag tag-role">ROLE_MANAGER</span></td>
+          <td class="cell-fk">→ 5</td>
+          <td><span class="cell-tag tag-perm">DEPARTMENT_WRITE</span></td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 3</td>
+          <td><span class="cell-tag tag-role">ROLE_ADMIN</span></td>
+          <td class="cell-fk">→ 1</td>
+          <td><span class="cell-tag tag-perm">EMPLOYEE_READ</span></td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 3</td>
+          <td><span class="cell-tag tag-role">ROLE_ADMIN</span></td>
+          <td class="cell-fk">→ 2</td>
+          <td><span class="cell-tag tag-perm">EMPLOYEE_WRITE</span></td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 3</td>
+          <td><span class="cell-tag tag-role">ROLE_ADMIN</span></td>
+          <td class="cell-fk">→ 3</td>
+          <td><span class="cell-tag tag-perm">EMPLOYEE_DELETE</span></td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 3</td>
+          <td><span class="cell-tag tag-role">ROLE_ADMIN</span></td>
+          <td class="cell-fk">→ 4,5,6</td>
+          <td><span class="cell-tag tag-perm">DEPARTMENT_*</span></td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 3</td>
+          <td><span class="cell-tag tag-role">ROLE_ADMIN</span></td>
+          <td class="cell-fk">→ 7</td>
+          <td><span class="cell-tag tag-perm">USER_READ</span></td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 3</td>
+          <td><span class="cell-tag tag-role">ROLE_ADMIN</span></td>
+          <td class="cell-fk">→ 8</td>
+          <td><span class="cell-tag tag-perm">USER_MANAGE</span></td>
+        </tr>
+        <tr>
+          <td class="cell-fk">→ 3</td>
+          <td><span class="cell-tag tag-role">ROLE_ADMIN</span></td>
+          <td class="cell-fk">→ 9</td>
+          <td><span class="cell-tag tag-perm">ROLE_MANAGE</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="schema-strip">
+      <span class="schema-col" style="color:var(--warn)">⚠️ Composite PK (role_id, permission_id)</span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name" style="color:var(--fk)">role_id</span><span class="col-sep">:</span><span class="col-type">BIGINT FK→roles</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name" style="color:var(--fk)">permission_id</span><span class="col-sep">:</span><span class="col-type">BIGINT FK→permissions</span></span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────── access_policies ─── -->
+  <div class="section-label">ABAC Table</div>
+
+  <div class="db-table" id="t-policies">
+    <div class="table-header">
+      <div class="table-name-row">
+        <span class="table-icon">⏰</span>
+        <span class="table-name">access_policies</span>
+        <span class="table-desc">Policy kiểm soát truy cập theo thời gian (ABAC)</span>
+      </div>
+      <span class="row-count">4 rows</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>🔑 id</th>
+          <th>resource_type</th>
+          <th>resource_id</th>
+          <th>subject_type</th>
+          <th>subject_id</th>
+          <th>day_of_week</th>
+          <th>start_time</th>
+          <th>end_time</th>
+          <th>effect</th>
+          <th>enabled</th>
+          <th>description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="cell-id">1</td>
+          <td><span class="cell-tag tag-dept">DEPARTMENT</span></td>
+          <td class="cell-null">NULL (all)</td>
+          <td><span class="cell-tag tag-dept">DEPARTMENT</span></td>
+          <td class="cell-fk">→ 1 (IT)</td>
+          <td><span class="cell-tag tag-all">ALL</span></td>
+          <td class="cell-mono" style="color:#d8b4fe">08:00</td>
+          <td class="cell-mono" style="color:#d8b4fe">17:00</td>
+          <td><span class="cell-tag tag-allow">ALLOW</span></td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+          <td style="font-size:.72rem;color:var(--muted)">IT dept working hours</td>
+        </tr>
+        <tr>
+          <td class="cell-id">2</td>
+          <td><span class="cell-tag tag-dept">EMPLOYEE</span></td>
+          <td class="cell-null">NULL (all)</td>
+          <td><span class="cell-tag tag-dept">DEPARTMENT</span></td>
+          <td class="cell-fk">→ 2 (HR)</td>
+          <td><span class="cell-tag tag-all">MON</span></td>
+          <td class="cell-mono" style="color:#d8b4fe">07:30</td>
+          <td class="cell-mono" style="color:#d8b4fe">16:30</td>
+          <td><span class="cell-tag tag-allow">ALLOW</span></td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+          <td style="font-size:.72rem;color:var(--muted)">HR Monday early shift</td>
+        </tr>
+        <tr>
+          <td class="cell-id">3</td>
+          <td><span class="cell-tag tag-dept">DEPARTMENT</span></td>
+          <td class="cell-null">NULL (all)</td>
+          <td><span class="cell-tag tag-dept">DEPARTMENT</span></td>
+          <td class="cell-fk">→ 2 (HR)</td>
+          <td><span class="cell-tag tag-all">ALL</span></td>
+          <td class="cell-mono" style="color:#d8b4fe">08:00</td>
+          <td class="cell-mono" style="color:#d8b4fe">17:00</td>
+          <td><span class="cell-tag tag-allow">ALLOW</span></td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+          <td style="font-size:.72rem;color:var(--muted)">HR working hours</td>
+        </tr>
+        <tr>
+          <td class="cell-id">4</td>
+          <td><span class="cell-tag tag-dept">DEPARTMENT</span></td>
+          <td class="cell-fk">→ 1 (IT)</td>
+          <td><span class="cell-tag tag-dept">DEPARTMENT</span></td>
+          <td class="cell-fk">→ 3 (Finance)</td>
+          <td><span class="cell-tag tag-all">SAT</span></td>
+          <td class="cell-mono" style="color:#d8b4fe">00:00</td>
+          <td class="cell-mono" style="color:#d8b4fe">23:59</td>
+          <td><span class="cell-tag tag-deny">DENY</span></td>
+          <td><span class="cell-bool-true">✓ true</span></td>
+          <td style="font-size:.72rem;color:var(--muted)">Finance cannot access IT dept on Saturdays</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="schema-strip">
+      <span class="schema-col"><span class="col-name" style="color:var(--pk)">id</span><span class="col-sep">:</span><span class="col-type">BIGSERIAL PK</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">resource_type</span><span class="col-sep">:</span><span class="col-type">VARCHAR(50) NOT NULL</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">resource_id</span><span class="col-sep">:</span><span class="col-type">BIGINT NULL</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">subject_type</span><span class="col-sep">:</span><span class="col-type">VARCHAR(50)</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">subject_id</span><span class="col-sep">:</span><span class="col-type">BIGINT</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name" style="color:#d8b4fe">day_of_week</span><span class="col-sep">:</span><span class="col-type">VARCHAR(10)</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name" style="color:#d8b4fe">start_time / end_time</span><span class="col-sep">:</span><span class="col-type">TIME</span></span>
+      <span style="color:var(--border)">|</span>
+      <span class="schema-col"><span class="col-name">effect</span><span class="col-sep">:</span><span class="col-type">ALLOW | DENY</span></span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────── Relations ─── -->
+  <div class="section-label">Entity Relationships</div>
+  <div class="relation-grid">
+    <div class="rel-card">
+      <div class="rel-title">👤 users → 👷 employees</div>
+      <div class="rel-line">
+        <span class="rel-tbl">users.employee_id</span>
+        <span class="rel-arrow">→</span>
+        <span class="rel-tbl">employees.id</span>
+      </div>
+      <div class="rel-desc">OneToOne — Để ABAC biết user thuộc phòng ban nào</div>
+    </div>
+    <div class="rel-card">
+      <div class="rel-title">👷 employees → 🏢 departments</div>
+      <div class="rel-line">
+        <span class="rel-tbl">employees.department_id</span>
+        <span class="rel-arrow">→</span>
+        <span class="rel-tbl">departments.id</span>
+      </div>
+      <div class="rel-desc">ManyToOne — Nhiều nhân viên thuộc một phòng ban</div>
+    </div>
+    <div class="rel-card">
+      <div class="rel-title">🏢 departments → 👷 employees (leader)</div>
+      <div class="rel-line">
+        <span class="rel-tbl">departments.leader_id</span>
+        <span class="rel-arrow">→</span>
+        <span class="rel-tbl">employees.id</span>
+      </div>
+      <div class="rel-desc">OneToOne — Mỗi phòng ban có một trưởng phòng</div>
+    </div>
+    <div class="rel-card">
+      <div class="rel-title">👤 users ↔ 🎭 roles</div>
+      <div class="rel-line">
+        <span class="rel-tbl">user_roles</span>
+        <span class="rel-arrow">N:N</span>
+        <span class="rel-tbl">junction table</span>
+      </div>
+      <div class="rel-desc">ManyToMany — Một user có thể có nhiều role</div>
+    </div>
+    <div class="rel-card">
+      <div class="rel-title">🎭 roles ↔ 🔐 permissions</div>
+      <div class="rel-line">
+        <span class="rel-tbl">role_permissions</span>
+        <span class="rel-arrow">N:N</span>
+        <span class="rel-tbl">junction table</span>
+      </div>
+      <div class="rel-desc">ManyToMany — Một role bao gồm nhiều permission</div>
+    </div>
+    <div class="rel-card">
+      <div class="rel-title">⏰ access_policies → 🏢 (subject)</div>
+      <div class="rel-line">
+        <span class="rel-tbl">access_policies.subject_id</span>
+        <span class="rel-arrow">→</span>
+        <span class="rel-tbl">departments / roles / users</span>
+      </div>
+      <div class="rel-desc">Polymorphic — subject_type quyết định bảng đích</div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────── ABAC walkthrough ─── -->
+  <div class="section-label">Ví dụ đánh giá ABAC — user "an.nguyen" gọi GET /api/employee/list lúc 16:45 thứ 4</div>
+  <div class="erd-banner">
+    <span class="hl-table">Step 1</span>  JWT token → load user id=2 (an.nguyen)<br>
+    <span class="hl-table">Step 2</span>  RBAC check: user có <span class="hl-pk">EMPLOYEE_READ</span> (qua ROLE_MANAGER) → ✅ pass<br>
+    <span class="hl-table">Step 3</span>  <span class="hl-rel">@abacEval.isAllowed(auth, "EMPLOYEE", null)</span> được gọi<br>
+    <span class="hl-table">Step 4</span>  Resolve department: user.employee_id=1 → employee.department_id=<span class="hl-fk">1 (IT)</span><br>
+    <span class="hl-table">Step 5</span>  Query: SELECT * FROM access_policies WHERE resource_type='EMPLOYEE'<br>
+                 AND subject_type='DEPARTMENT' AND subject_id=1 AND enabled=true<br>
+    <span class="hl-table">Step 6</span>  Found policy id=<span class="hl-pk">1</span>: day=ALL, <span class="hl-time">08:00–17:00</span>, effect=ALLOW<br>
+    <span class="hl-table">Step 7</span>  Match day? ALL → ✅  |  Match time? 16:45 ∈ [08:00,17:00] → ✅<br>
+    <span class="hl-table">Step 8</span>  anyAllow=true, no DENY found → <span class="hl-rel">GRANT ACCESS ✅</span><br><br>
+
+    <span class="hl-table">Scenario B</span>  Nếu gọi lúc 18:30:<br>
+    <span class="hl-table">Step 7b</span> Match time? 18:30 ∉ [08:00,17:00] → policy không match<br>
+    <span class="hl-table">Step 8b</span> anyAllow=false, policies exist → throw <span class="hl-pk">AccessTimeException</span> → <span style="color:#ef4444">403 FORBIDDEN ❌</span>
+  </div>
+
+</main>
+</div>
+
+<script>
+  function scrollTo(id) {
+    document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelectorAll('.table-link').forEach(l => l.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+  }
+
+  // Highlight active table on scroll
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        const map = {
+          't-departments': 0, 't-employees': 1, 't-users': 2,
+          't-roles': 3, 't-permissions': 4,
+          't-user-roles': 5, 't-role-perms': 6, 't-policies': 7
+        };
+        const links = document.querySelectorAll('.table-link');
+        links.forEach(l => l.classList.remove('active'));
+        if (map[id] !== undefined) links[map[id]].classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('.db-table').forEach(t => observer.observe(t));
+</script>
+</body>
+</html>

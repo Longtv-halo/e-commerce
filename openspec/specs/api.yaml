@@ -1,0 +1,958 @@
+openapi: 3.0.3
+
+info:
+  title: E-Commerce Employee API
+  description: |
+    Backend REST API cho hệ thống quản lý nhân viên và phòng ban.
+
+    ## Authentication
+    Hầu hết các endpoint yêu cầu JWT Bearer token (trừ `/api/auth/**`).
+    - Lấy token qua `POST /api/auth/login`
+    - Gửi header: `Authorization: Bearer <token>`
+
+    ## Response format
+    Mọi response đều dùng `BaseResponse<T>`:
+    ```json
+    {
+      "success": true,
+      "results": { ... },
+      "resultInfo": { ... },
+      "error": null
+    }
+    ```
+    Khi lỗi:
+    ```json
+    {
+      "success": false,
+      "results": null,
+      "error": {
+        "code": "404",
+        "message": "Employee with id 9999 not found",
+        "pointer": null
+      }
+    }
+    ```
+
+    ## Pagination
+    Các endpoint list/search nhận `BaseRequest` body:
+    - `page`: 0-indexed (mặc định 0)
+    - `size`: 1–100 (mặc định 10)
+    - `sortBy`: tên field (id, empName, empEmail...)
+    - `sortDir`: "asc" hoặc "desc"
+
+  version: 1.0.0
+  contact:
+    name: Dev Team
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Auth
+    description: Đăng ký và đăng nhập, lấy JWT token
+  - name: Employee
+    description: CRUD nhân viên với phân trang và tìm kiếm
+  - name: Department
+    description: CRUD phòng ban, assign leader
+  - name: User
+    description: Quản lý user (nội bộ)
+
+# ─────────────────────────────────────────────────────────
+# Security scheme
+# ─────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # ───────────── Shared schemas ─────────────
+  schemas:
+
+    # ── Pagination input ──
+    BaseRequest:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Số trang, bắt đầu từ 0
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+          description: Số phần tử mỗi trang
+        sortBy:
+          type: string
+          default: id
+          description: Tên field để sắp xếp
+        sortDir:
+          type: string
+          enum: [asc, desc]
+          default: asc
+          description: Hướng sắp xếp
+
+    # ── Pagination metadata ──
+    ResultInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrevious:
+          type: boolean
+
+    # ── Error detail ──
+    ErrorDetail:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "404"
+        message:
+          type: string
+          example: Employee with id 9999 not found
+        pointer:
+          type: string
+          nullable: true
+          description: Field gây lỗi (dùng cho validation error)
+
+    # ── Generic BaseResponse wrappers ──
+    BaseResponseEmployee:
+      type: object
+      properties:
+        success:
+          type: boolean
+        results:
+          $ref: '#/components/schemas/ResponseEmployeeBean'
+        resultInfo:
+          $ref: '#/components/schemas/ResultInfo'
+          nullable: true
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+          nullable: true
+
+    BaseResponseEmployeeList:
+      type: object
+      properties:
+        success:
+          type: boolean
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResponseEmployeeBean'
+        resultInfo:
+          $ref: '#/components/schemas/ResultInfo'
+          nullable: true
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+          nullable: true
+
+    BaseResponseDepartment:
+      type: object
+      properties:
+        success:
+          type: boolean
+        results:
+          $ref: '#/components/schemas/ResponseDepartmentBean'
+        resultInfo:
+          $ref: '#/components/schemas/ResultInfo'
+          nullable: true
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+          nullable: true
+
+    BaseResponseDepartmentList:
+      type: object
+      properties:
+        success:
+          type: boolean
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResponseDepartmentBean'
+        resultInfo:
+          $ref: '#/components/schemas/ResultInfo'
+          nullable: true
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+          nullable: true
+
+    BaseResponseAuth:
+      type: object
+      properties:
+        success:
+          type: boolean
+        results:
+          $ref: '#/components/schemas/AuthResponse'
+        resultInfo:
+          $ref: '#/components/schemas/ResultInfo'
+          nullable: true
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+          nullable: true
+
+    BaseResponseVoid:
+      type: object
+      properties:
+        success:
+          type: boolean
+        results:
+          nullable: true
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+          nullable: true
+
+    # ── Auth ──
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: john_doe
+        password:
+          type: string
+          format: password
+          example: secret123
+
+    RegisterRequest:
+      type: object
+      required: [name, username, password]
+      properties:
+        name:
+          type: string
+          example: John Doe
+        username:
+          type: string
+          minLength: 4
+          maxLength: 50
+          example: john_doe
+        password:
+          type: string
+          minLength: 6
+          format: password
+          example: secret123
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type:
+          type: string
+          default: Bearer
+        username:
+          type: string
+          example: john_doe
+        role:
+          type: string
+          example: ROLE_ADMIN
+
+    # ── Employee ──
+    RequestEmployeeBean:
+      type: object
+      required: [empName, empEmail, departmentId]
+      properties:
+        empName:
+          type: string
+          description: Tên nhân viên (bắt buộc)
+          example: Nguyen Van A
+        empEmail:
+          type: string
+          format: email
+          description: Email nhân viên (bắt buộc, đúng format email)
+          example: nguyenvana@example.com
+        departmentId:
+          type: integer
+          format: int64
+          description: ID phòng ban (phải tồn tại trong DB)
+          example: 1
+
+    ResponseEmployeeBean:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        empName:
+          type: string
+          example: Nguyen Van A
+        empEmail:
+          type: string
+          example: nguyenvana@example.com
+        departmentId:
+          type: integer
+          format: int64
+          example: 1
+        departmentName:
+          type: string
+          example: Engineering
+
+    SearchEmployeeRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseRequest'
+        - type: object
+          required: [empName]
+          properties:
+            empName:
+              type: string
+              description: Keyword tìm kiếm theo tên (LIKE %keyword%)
+              example: Nguyen
+
+    # ── Department ──
+    RequestDepartmentBean:
+      type: object
+      required: [name, empEmail, isOwner]
+      properties:
+        name:
+          type: string
+          description: Tên phòng ban
+          example: Engineering
+        empEmail:
+          type: string
+          format: email
+          description: Email của leader/owner phòng ban
+          example: leader@example.com
+        empName:
+          type: string
+          description: Tên nhân viên (optional)
+          example: Tran Thi B
+        isOwner:
+          type: boolean
+          description: true nếu là owner phòng ban
+          example: true
+
+    ResponseDepartmentBean:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: Engineering
+        employeeCount:
+          type: integer
+          format: int64
+          example: 10
+
+    SearchDepartmentRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseRequest'
+        - type: object
+          required: [departmentName]
+          properties:
+            departmentName:
+              type: string
+              description: Keyword tìm kiếm theo tên phòng ban
+              example: Eng
+
+    RequestAssignRoleDepartmentBean:
+      type: object
+      required: [name, ownerEmail, newOwnerEmail]
+      properties:
+        name:
+          type: string
+          description: Tên phòng ban
+          example: Engineering
+        ownerEmail:
+          type: string
+          format: email
+          description: Email owner hiện tại
+          example: current_owner@example.com
+        newOwnerName:
+          type: string
+          description: Tên owner mới (optional)
+          example: Le Van C
+        newOwnerEmail:
+          type: string
+          format: email
+          description: Email owner mới
+          example: new_owner@example.com
+
+# ─────────────────────────────────────────────────────────
+# Global security (tất cả endpoint trừ auth cần token)
+# ─────────────────────────────────────────────────────────
+security:
+  - bearerAuth: []
+
+# ─────────────────────────────────────────────────────────
+# Paths
+# ─────────────────────────────────────────────────────────
+paths:
+
+  # ══════════════ AUTH ══════════════
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Đăng ký tài khoản mới
+      description: Tạo user mới trong hệ thống. Không cần token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              name: John Doe
+              username: john_doe
+              password: secret123
+      responses:
+        '201':
+          description: Đăng ký thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseAuth'
+              example:
+                success: true
+                results:
+                  token: eyJhbGciOiJIUzI1NiJ9...
+                  type: Bearer
+                  username: john_doe
+                  role: ROLE_USER
+        '400':
+          description: Validation error (username/password không hợp lệ)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseAuth'
+              example:
+                success: false
+                error:
+                  code: "400"
+                  message: Username must be between 4 and 50 characters
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Đăng nhập và lấy JWT token
+      description: Trả về JWT token để dùng cho các request tiếp theo. Không cần token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: john_doe
+              password: secret123
+      responses:
+        '200':
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseAuth'
+              example:
+                success: true
+                results:
+                  token: eyJhbGciOiJIUzI1NiJ9...
+                  type: Bearer
+                  username: john_doe
+                  role: ROLE_ADMIN
+        '400':
+          description: Sai username hoặc password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseAuth'
+              example:
+                success: false
+                error:
+                  code: "400"
+                  message: Invalid username or password
+
+  # ══════════════ EMPLOYEE ══════════════
+  /api/employee/{id}:
+    get:
+      tags: [Employee]
+      summary: Lấy thông tin nhân viên theo ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmployee'
+              example:
+                success: true
+                results:
+                  id: 1
+                  empName: Nguyen Van A
+                  empEmail: nguyenvana@example.com
+                  departmentId: 1
+                  departmentName: Engineering
+        '404':
+          description: Không tìm thấy nhân viên
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmployee'
+              example:
+                success: false
+                error:
+                  code: "404"
+                  message: Employee with id 9999 not found
+
+    put:
+      tags: [Employee]
+      summary: Cập nhật thông tin nhân viên
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestEmployeeBean'
+            example:
+              empName: Nguyen Van A Updated
+              empEmail: nguyenvana_new@example.com
+              departmentId: 2
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmployee'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmployee'
+        '404':
+          description: Không tìm thấy nhân viên
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmployee'
+
+    delete:
+      tags: [Employee]
+      summary: Xóa nhân viên
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseVoid'
+              example:
+                success: true
+                results: null
+        '404':
+          description: Không tìm thấy nhân viên
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseVoid'
+
+  /api/employee/list:
+    post:
+      tags: [Employee]
+      summary: Lấy danh sách nhân viên có phân trang
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaseRequest'
+            example:
+              page: 0
+              size: 10
+              sortBy: id
+              sortDir: asc
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmployeeList'
+              example:
+                success: true
+                results:
+                  - id: 1
+                    empName: Nguyen Van A
+                    empEmail: nguyenvana@example.com
+                    departmentId: 1
+                    departmentName: Engineering
+                resultInfo:
+                  page: 0
+                  size: 10
+                  totalElements: 50
+                  totalPages: 5
+                  hasNext: true
+                  hasPrevious: false
+
+  /api/employee/search:
+    post:
+      tags: [Employee]
+      summary: Tìm nhân viên theo tên (LIKE %keyword%)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchEmployeeRequest'
+            example:
+              empName: Nguyen
+              page: 0
+              size: 10
+              sortBy: empName
+              sortDir: asc
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmployeeList'
+        '400':
+          description: empName không được để trống
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmployeeList'
+
+  /api/employee/create:
+    post:
+      tags: [Employee]
+      summary: Tạo nhân viên mới
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestEmployeeBean'
+            example:
+              empName: Nguyen Van A
+              empEmail: nguyenvana@example.com
+              departmentId: 1
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmployee'
+              example:
+                success: true
+                results:
+                  id: 10
+                  empName: Nguyen Van A
+                  empEmail: nguyenvana@example.com
+                  departmentId: 1
+                  departmentName: Engineering
+        '400':
+          description: Validation error (empName/empEmail/departmentId không hợp lệ)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseEmployee'
+
+  # ══════════════ DEPARTMENT ══════════════
+  /api/department/{id}:
+    get:
+      tags: [Department]
+      summary: Lấy thông tin phòng ban theo ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartment'
+              example:
+                success: true
+                results:
+                  id: 1
+                  name: Engineering
+                  employeeCount: 10
+        '404':
+          description: Không tìm thấy phòng ban
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartment'
+
+    put:
+      tags: [Department]
+      summary: Cập nhật phòng ban
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestDepartmentBean'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartment'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartment'
+        '404':
+          description: Không tìm thấy phòng ban
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartment'
+
+    delete:
+      tags: [Department]
+      summary: Xóa phòng ban
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseVoid'
+        '404':
+          description: Không tìm thấy phòng ban
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseVoid'
+
+  /api/department/list:
+    post:
+      tags: [Department]
+      summary: Lấy danh sách phòng ban có phân trang
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaseRequest'
+            example:
+              page: 0
+              size: 10
+              sortBy: id
+              sortDir: asc
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartmentList'
+
+  /api/department/search:
+    post:
+      tags: [Department]
+      summary: Tìm phòng ban theo tên
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchDepartmentRequest'
+            example:
+              departmentName: Eng
+              page: 0
+              size: 10
+      responses:
+        '200':
+          description: Thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartmentList'
+        '400':
+          description: departmentName không được để trống
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartmentList'
+
+  /api/department/create:
+    post:
+      tags: [Department]
+      summary: Tạo phòng ban mới
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestDepartmentBean'
+            example:
+              name: Engineering
+              empEmail: leader@example.com
+              empName: Tran Thi B
+              isOwner: true
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartment'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartment'
+
+  /api/department/assign{id}:
+    put:
+      tags: [Department]
+      summary: Thay đổi leader (role owner) của phòng ban
+      description: |
+        Chuyển quyền owner từ `ownerEmail` sang `newOwnerEmail` trong phòng ban có ID = `{id}`.
+        **Lưu ý:** path parameter viết liền `assign{id}` (không có dấu `/` giữa assign và id).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestAssignRoleDepartmentBean'
+            example:
+              name: Engineering
+              ownerEmail: current_owner@example.com
+              newOwnerName: Le Van C
+              newOwnerEmail: new_owner@example.com
+      responses:
+        '201':
+          description: Thay đổi leader thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartment'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartment'
+        '404':
+          description: Không tìm thấy phòng ban hoặc nhân viên
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseResponseDepartment'
+
+  # ══════════════ USER ══════════════
+  /api/user:
+    get:
+      tags: [User]
+      summary: Lấy danh sách users (internal)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Thành công
+          content:
+            text/plain:
+              schema:
+                type: string
